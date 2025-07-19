@@ -92,8 +92,16 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel()) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                UsernameInput(loginUiState.username, onValueChange = viewModel::onUsernameChange, error = loginUiState.usernameError)
-                PasswordInput(loginUiState.password, onValueChange = viewModel::onPasswordChange, error = loginUiState.passwordError)
+                UsernameInput(
+                    loginUiState.username,
+                    onValueChange = viewModel::onUsernameChange,
+                    error = loginUiState.usernameError
+                )
+                PasswordInput(
+                    loginUiState.password,
+                    onValueChange = viewModel::onPasswordChange,
+                    error = loginUiState.passwordError
+                )
             }
         }
         AnimatedVisibility(
@@ -119,35 +127,13 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel()) {
 
 @Composable
 fun AppLogo() {
-    Box(
-        modifier = Modifier
-            .size(170.dp)
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        LoginColors.logoBackground,
-                        LoginColors.logoBackground.copy(alpha = 0.7f),
-                        LoginColors.background
-                    ),
-                    center = Offset(85f, 85f),
-                    radius = 120f
-                ),
-                shape = CircleShape
-            )
-            .border(
-                width = 4.dp,
-                color = Color.White,
-                shape = CircleShape
-            )
-            .shadow(12.dp, CircleShape, clip = false),
-        contentAlignment = Alignment.Center
-    ) {
+
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo BurgerCredit",
-            modifier = Modifier.size(120.dp)
+            modifier = Modifier.size(250.dp)
         )
-    }
+
 }
 
 @Composable
@@ -345,7 +331,8 @@ fun LoginActionButton(
     containerColor: Color,
     textColor: Color,
     modifier: Modifier = Modifier,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    showProgress: Boolean = false
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -360,7 +347,7 @@ fun LoginActionButton(
         border = null,
         enabled = !isLoading
     ) {
-        if (isLoading) {
+        if (showProgress) {
             CircularProgressIndicator(
                 color = textColor,
                 modifier = Modifier.size(24.dp)
@@ -380,7 +367,7 @@ fun LoginActionButton(
 @Composable
 fun LoginButtons(viewModel: LoginViewModel = hiltViewModel()) {
     val loginUiState by viewModel.loginUiState.collectAsState()
-    
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -390,13 +377,16 @@ fun LoginButtons(viewModel: LoginViewModel = hiltViewModel()) {
             onClick = { viewModel.onLogin() },
             containerColor = LoginColors.buttonPrimary,
             textColor = LoginColors.buttonText,
-            isLoading = loginUiState.result is LoginResultState.Loading
+            isLoading = loginUiState.result is LoginResultState.Loading,
+            showProgress = loginUiState.result is LoginResultState.Loading
         )
         LoginActionButton(
             text = "Sign Up",
             onClick = { },
             containerColor = LoginColors.buttonSecondary,
-            textColor = LoginColors.buttonText
+            textColor = LoginColors.buttonText,
+            isLoading = loginUiState.result is LoginResultState.Loading,
+            showProgress = false
         )
     }
 }
