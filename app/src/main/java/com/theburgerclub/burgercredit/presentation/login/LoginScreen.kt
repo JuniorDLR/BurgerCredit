@@ -27,6 +27,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.theburgerclub.burgercredit.presentation.theme.LoginColors
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -53,6 +59,28 @@ fun LoginBody() {
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
 
+    // Control de animaciones escalonadas
+    var showLogo by remember { mutableStateOf(false) }
+    var showTitle by remember { mutableStateOf(false) }
+    var showInputs by remember { mutableStateOf(false) }
+    var showRemember by remember { mutableStateOf(false) }
+    var showButtons by remember { mutableStateOf(false) }
+    var showAuthor by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        showLogo = true
+        delay(120)
+        showTitle = true
+        delay(120)
+        showInputs = true
+        delay(120)
+        showRemember = true
+        delay(120)
+        showButtons = true
+        delay(120)
+        showAuthor = true
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -60,13 +88,45 @@ fun LoginBody() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(22.dp, Alignment.Top)
     ) {
-        AppLogo()
-        AppTitle()
-        EmailInput(email, onValueChange = { email = it })
-        PasswordInput(password, onValueChange = { password = it })
-        RememberMeRow(rememberMe, onCheckedChange = { rememberMe = it })
-        LoginButtons()
-        AppAuthor()
+        AnimatedVisibility(
+            visible = showLogo,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { -60 })
+        ) { AppLogo() }
+        AnimatedVisibility(
+            visible = showTitle,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
+        ) { AppTitle() }
+        AnimatedVisibility(
+            visible = showInputs,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                EmailInput(email, onValueChange = { email = it })
+                PasswordInput(password, onValueChange = { password = it })
+            }
+        }
+        AnimatedVisibility(
+            visible = showRemember,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
+        ) {
+            RememberMeRow(rememberMe, onCheckedChange = { rememberMe = it })
+        }
+        AnimatedVisibility(
+            visible = showButtons,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { 60 })
+        ) {
+            LoginButtons()
+        }
+        AnimatedVisibility(
+            visible = showAuthor,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { 80 })
+        ) {
+            AppAuthor()
+        }
     }
 }
 
