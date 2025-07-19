@@ -1,7 +1,10 @@
 package com.theburgerclub.burgercredit.presentation.login.model
 
 data class LoginUiState(
-    val email: String = "",
+    val username: String = "",
     val password: String = "",
-    val rememberMe: Boolean = false
+    val rememberMe: Boolean = false,
+    val usernameError: String? = null,
+    val passwordError: String? = null,
+    val result: LoginResultState = LoginResultState.Idle
 ) 

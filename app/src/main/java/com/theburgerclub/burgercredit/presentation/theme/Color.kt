@@ -34,7 +34,7 @@ val InputIcon = Color(0xFFB0B8C1)
 val ButtonPrimary = BurgerOrange
 val ButtonSecondary = BurgerGray
 val ButtonText = BurgerBlack
-val LinkColor = BurgerGreen
+val LinkColor = BurgerRed  // Cambiado de BurgerGreen a BurgerRed
 
 // Colores agrupados para login (puedes usar los globales directamente)
 data object LoginColors {
@@ -45,6 +45,6 @@ data object LoginColors {
     val buttonPrimary = ButtonPrimary
     val buttonSecondary = ButtonSecondary
     val buttonText = ButtonText
-    val link = LinkColor
+    val link = LinkColor  // Ahora será rojo
     val dark = OnBackgroundColor
 } 

@@ -35,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.theburgerclub.burgercredit.R
 import com.theburgerclub.burgercredit.presentation.login.viewmodel.LoginViewModel
 import kotlinx.coroutines.delay
+import com.theburgerclub.burgercredit.presentation.login.model.LoginResultState
 
 
 @Composable
@@ -57,7 +58,7 @@ fun LoginScreen(loginViewModel: LoginViewModel = hiltViewModel()) {
 
 @Composable
 fun LoginBody(viewModel: LoginViewModel = hiltViewModel()) {
-    val uiState by viewModel.uiState.collectAsState()
+    val loginUiState by viewModel.loginUiState.collectAsState()
     var animationStep by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -91,21 +92,21 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel()) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                EmailInput(uiState.email, onValueChange = viewModel::onEmailChange)
-                PasswordInput(uiState.password, onValueChange = viewModel::onPasswordChange)
+                UsernameInput(loginUiState.username, onValueChange = viewModel::onUsernameChange, error = loginUiState.usernameError)
+                PasswordInput(loginUiState.password, onValueChange = viewModel::onPasswordChange, error = loginUiState.passwordError)
             }
         }
         AnimatedVisibility(
             visible = animationStep >= 4,
             enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
         ) {
-            RememberMeRow(uiState.rememberMe, onCheckedChange = viewModel::onRememberMeChange)
+            RememberMeRow(loginUiState.rememberMe, onCheckedChange = viewModel::onRememberMeChange)
         }
         AnimatedVisibility(
             visible = animationStep >= 5,
             enter = fadeIn() + slideInVertically(initialOffsetY = { 60 })
         ) {
-            LoginButtons()
+            LoginButtons(viewModel)
         }
         AnimatedVisibility(
             visible = animationStep >= 6,
@@ -190,37 +191,59 @@ fun AppTitle() {
 }
 
 @Composable
-fun EmailInput(value: String, onValueChange: (String) -> Unit) {
-    LoginTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = "Email",
-        placeholder = "Email",
-        trailingIcon = {
-            LoginInputIcon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Email Icon"
+fun UsernameInput(value: String, onValueChange: (String) -> Unit, error: String? = null) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        LoginTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = "Username",
+            placeholder = "Username",
+            trailingIcon = {
+                LoginInputIcon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Username Icon"
+                )
+            },
+            isPassword = false,
+            hasError = error != null
+        )
+        if (error != null) {
+            Text(
+                text = error,
+                color = LoginColors.link,
+                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp)
             )
-        },
-        isPassword = false
-    )
+        }
+    }
 }
 
 @Composable
-fun PasswordInput(value: String, onValueChange: (String) -> Unit) {
-    LoginTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = "Password",
-        placeholder = "Password",
-        trailingIcon = {
-            LoginInputIcon(
-                imageVector = Icons.Default.Lock,
-                contentDescription = "Password Icon"
+fun PasswordInput(value: String, onValueChange: (String) -> Unit, error: String? = null) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        LoginTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = "Password",
+            placeholder = "Password",
+            trailingIcon = {
+                LoginInputIcon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "Password Icon"
+                )
+            },
+            isPassword = true,
+            hasError = error != null
+        )
+        if (error != null) {
+            Text(
+                text = error,
+                color = LoginColors.link,
+                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp)
             )
-        },
-        isPassword = true
-    )
+        }
+    }
 }
 
 @Composable
@@ -272,7 +295,8 @@ fun LoginTextField(
     placeholder: String,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    isPassword: Boolean = false
+    isPassword: Boolean = false,
+    hasError: Boolean = false
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -294,8 +318,8 @@ fun LoginTextField(
                 unfocusedContainerColor = LoginColors.inputBackground,
                 focusedContainerColor = LoginColors.inputBackground,
                 disabledContainerColor = LoginColors.inputBackground,
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = LoginColors.inputIcon,
+                unfocusedBorderColor = if (hasError) LoginColors.link else Color.Transparent,
+                focusedBorderColor = if (hasError) LoginColors.link else LoginColors.inputIcon,
                 disabledBorderColor = Color.Transparent,
                 cursorColor = LoginColors.dark,
                 focusedTextColor = LoginColors.dark,
@@ -320,7 +344,8 @@ fun LoginActionButton(
     onClick: () -> Unit,
     containerColor: Color,
     textColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLoading: Boolean = false
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -332,33 +357,44 @@ fun LoginActionButton(
             containerColor = containerColor,
             contentColor = textColor
         ),
-        border = null
+        border = null,
+        enabled = !isLoading
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Bold,
-                color = textColor
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = textColor,
+                modifier = Modifier.size(24.dp)
             )
-        )
+        } else {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
+            )
+        }
     }
 }
 
 @Composable
-fun LoginButtons() {
+fun LoginButtons(viewModel: LoginViewModel = hiltViewModel()) {
+    val loginUiState by viewModel.loginUiState.collectAsState()
+    
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         LoginActionButton(
-            text = "Login",
-            onClick = {  },
+            text = if (loginUiState.result is LoginResultState.Loading) "" else "Login",
+            onClick = { viewModel.onLogin() },
             containerColor = LoginColors.buttonPrimary,
-            textColor = LoginColors.buttonText
+            textColor = LoginColors.buttonText,
+            isLoading = loginUiState.result is LoginResultState.Loading
         )
         LoginActionButton(
             text = "Sign Up",
-            onClick = {  },
+            onClick = { },
             containerColor = LoginColors.buttonSecondary,
             textColor = LoginColors.buttonText
         )

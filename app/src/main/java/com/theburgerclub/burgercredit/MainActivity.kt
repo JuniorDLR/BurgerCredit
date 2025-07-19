@@ -6,12 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.theburgerclub.burgercredit.presentation.login.ui.LoginScreen
-import com.theburgerclub.burgercredit.presentation.login.viewmodel.LoginViewModel
 import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 import com.theburgerclub.burgercredit.presentation.theme.BurgerCreditTheme
 import dagger.hilt.android.AndroidEntryPoint
