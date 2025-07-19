@@ -7,9 +7,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.theburgerclub.burgercredit.presentation.login.LoginScreen
 import com.theburgerclub.burgercredit.presentation.routes.AppRoute
-import com.theburgerclub.burgercredit.ui.theme.BurgerCreditTheme
+import com.theburgerclub.burgercredit.presentation.theme.BurgerCreditTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -31,9 +33,9 @@ fun AppNavGraph() {
     val navController = rememberNavController()
     NavHost(
         navController = navController,
-        startDestination = AppRoute.CustomerScreen.route
+        startDestination = AppRoute.LoginScreen.route
     ) {
-        // Aquí irán los composables de las pantallas, por ejemplo:
+        composable(route = AppRoute.LoginScreen.route) { LoginScreen() }
         // composable(AppRoute.CustomerScreen.route) { ... }
         // composable(AppRoute.EditCustomerScreen.route) { ... }
         // composable(AppRoute.DishesScreen.route) { ... }
