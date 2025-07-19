@@ -1,0 +1,15 @@
+package com.theburgerclub.burgercredit.presentation.routes
+
+sealed class AppRoute(val route: String) {
+    // Clientes
+    object CustomerScreen : AppRoute("customer")
+    object EditCustomerScreen : AppRoute("editCustomer/{customerId}")
+
+    // Platos
+    object DishesScreen : AppRoute("dishes")
+    object EditDishScreen : AppRoute("editDish/{dishId}")
+
+    // Deudas
+    object DebtScreen : AppRoute("debt")
+    object EditDebtScreen : AppRoute("editDebt/{debtId}")
+} 
