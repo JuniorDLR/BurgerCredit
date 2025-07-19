@@ -1,6 +1,10 @@
 package com.theburgerclub.burgercredit.presentation.routes
 
 sealed class AppRoute(val route: String) {
+    // Auth
+    object LoginScreen : AppRoute("login")
+    object RegisterScreen : AppRoute("register")
+
     // Clientes
     object CustomerScreen : AppRoute("customer")
     object EditCustomerScreen : AppRoute("editCustomer/{customerId}")
