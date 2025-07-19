@@ -1,4 +1,4 @@
-package com.theburgerclub.burgercredit.presentation.login
+package com.theburgerclub.burgercredit.presentation.login.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,15 +28,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.theburgerclub.burgercredit.presentation.theme.LoginColors
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.theburgerclub.burgercredit.R
+import com.theburgerclub.burgercredit.presentation.login.viewmodel.LoginViewModel
 import kotlinx.coroutines.delay
 
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(loginViewModel: LoginViewModel = hiltViewModel()) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -49,36 +51,20 @@ fun LoginScreen() {
                 )
             )
     ) {
-        LoginBody()
+        LoginBody(loginViewModel)
     }
 }
 
 @Composable
-fun LoginBody() {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var rememberMe by remember { mutableStateOf(false) }
-
-    // Control de animaciones escalonadas
-    var showLogo by remember { mutableStateOf(false) }
-    var showTitle by remember { mutableStateOf(false) }
-    var showInputs by remember { mutableStateOf(false) }
-    var showRemember by remember { mutableStateOf(false) }
-    var showButtons by remember { mutableStateOf(false) }
-    var showAuthor by remember { mutableStateOf(false) }
+fun LoginBody(viewModel: LoginViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
+    var animationStep by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
-        showLogo = true
-        delay(120)
-        showTitle = true
-        delay(120)
-        showInputs = true
-        delay(120)
-        showRemember = true
-        delay(120)
-        showButtons = true
-        delay(120)
-        showAuthor = true
+        repeat(6) { step ->
+            delay(120)
+            animationStep = step + 1
+        }
     }
 
     Column(
@@ -89,15 +75,15 @@ fun LoginBody() {
         verticalArrangement = Arrangement.spacedBy(22.dp, Alignment.Top)
     ) {
         AnimatedVisibility(
-            visible = showLogo,
+            visible = animationStep >= 1,
             enter = fadeIn() + slideInVertically(initialOffsetY = { -60 })
         ) { AppLogo() }
         AnimatedVisibility(
-            visible = showTitle,
+            visible = animationStep >= 2,
             enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
         ) { AppTitle() }
         AnimatedVisibility(
-            visible = showInputs,
+            visible = animationStep >= 3,
             enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
         ) {
             Column(
@@ -105,24 +91,24 @@ fun LoginBody() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                EmailInput(email, onValueChange = { email = it })
-                PasswordInput(password, onValueChange = { password = it })
+                EmailInput(uiState.email, onValueChange = viewModel::onEmailChange)
+                PasswordInput(uiState.password, onValueChange = viewModel::onPasswordChange)
             }
         }
         AnimatedVisibility(
-            visible = showRemember,
+            visible = animationStep >= 4,
             enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
         ) {
-            RememberMeRow(rememberMe, onCheckedChange = { rememberMe = it })
+            RememberMeRow(uiState.rememberMe, onCheckedChange = viewModel::onRememberMeChange)
         }
         AnimatedVisibility(
-            visible = showButtons,
+            visible = animationStep >= 5,
             enter = fadeIn() + slideInVertically(initialOffsetY = { 60 })
         ) {
             LoginButtons()
         }
         AnimatedVisibility(
-            visible = showAuthor,
+            visible = animationStep >= 6,
             enter = fadeIn() + slideInVertically(initialOffsetY = { 80 })
         ) {
             AppAuthor()
@@ -156,7 +142,7 @@ fun AppLogo() {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = com.theburgerclub.burgercredit.R.drawable.logo),
+            painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo BurgerCredit",
             modifier = Modifier.size(120.dp)
         )
