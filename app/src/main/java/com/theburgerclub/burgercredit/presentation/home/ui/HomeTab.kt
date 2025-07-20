@@ -11,6 +11,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.airbnb.lottie.compose.LottieConstants
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.painterResource
+import com.theburgerclub.burgercredit.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,51 +79,97 @@ fun HomeBanner() {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
     val screenWidth = configuration.screenWidthDp
-    
+
+    val isLandscape = screenWidth > screenHeight
+
     // Responsive sizing
-    val bannerHeight = when {
-        screenHeight < 600 -> 150.dp  // Small screens
-        screenHeight < 800 -> 180.dp  // Medium screens
-        screenWidth > 720 -> 250.dp   // Large screens (tablets)
-        else -> 200.dp                // Default
+    val lottieSize = when {
+        isLandscape && screenWidth > 720 -> 220.dp
+        isLandscape -> 170.dp
+        screenWidth < 360 -> 90.dp
+        screenWidth < 480 -> 110.dp
+        screenWidth > 720 -> 170.dp
+        else -> 130.dp
     }
-    
-    val padding = when {
-        screenWidth < 320 -> 12.dp  // Very small screens
-        screenWidth < 480 -> 14.dp  // Small screens
-        screenWidth > 720 -> 24.dp  // Large screens (tablets)
-        else -> 16.dp               // Default
+    val cardPadding = when {
+        isLandscape && screenWidth > 720 -> 40.dp
+        isLandscape -> 24.dp
+        screenWidth < 360 -> 8.dp
+        screenWidth < 480 -> 12.dp
+        screenWidth > 720 -> 32.dp
+        else -> 16.dp
     }
-    
-    val fontSize = when {
-        screenHeight < 600 -> 18.sp   // Small screens
-        screenHeight < 800 -> 20.sp   // Medium screens
-        screenWidth > 720 -> 28.sp    // Large screens (tablets)
-        else -> 22.sp                 // Default
+    val rowSpacing = when {
+        isLandscape && screenWidth > 720 -> 48.dp
+        isLandscape -> 32.dp
+        screenWidth < 360 -> 8.dp
+        screenWidth < 480 -> 12.dp
+        screenWidth > 720 -> 32.dp
+        else -> 16.dp
     }
-    
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isLandscape) Modifier.fillMaxHeight() else Modifier)
+            .padding(cardPadding),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(bannerHeight)
-                .padding(padding),
-            contentAlignment = Alignment.BottomStart
+                .then(if (isLandscape) Modifier.fillMaxHeight() else Modifier)
+                .padding(cardPadding),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Welcome to BurgerCredit",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize
-                ),
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            // Lottie a la izquierda
+            val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.walking))
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                LottieAnimation(
+                    composition = composition,
+                    iterations = LottieConstants.IterateForever,
+                    modifier = Modifier.size(lottieSize).fillMaxHeight()
+                )
+            }
+            Spacer(modifier = Modifier.width(rowSpacing))
+            // Texto a la derecha
+            Column(
+                modifier = Modifier
+                    .weight(2f)
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .padding(end = 8.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Bienvenido a",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+                Text(
+                    text = "BurgerCredit",
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Tu espacio para administrar créditos",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
         }
     }
 }

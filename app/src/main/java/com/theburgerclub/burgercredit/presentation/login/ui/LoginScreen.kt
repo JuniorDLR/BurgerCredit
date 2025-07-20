@@ -592,7 +592,7 @@ fun LoginButtons(viewModel: LoginViewModel = hiltViewModel(), navController: Nav
 @Composable
 fun AppAuthor() {
     Text(
-        text = "Developed by JuanxerDev",
+        text = "Developed by JunaxerDev",
         style = MaterialTheme.typography.bodySmall.copy(
             color = LoginColors.inputIcon,
             fontWeight = FontWeight.Medium
