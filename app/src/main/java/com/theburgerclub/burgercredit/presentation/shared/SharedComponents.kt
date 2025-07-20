@@ -41,10 +41,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.navigation.NavController
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBarShared(nameTopBar: String) {
+fun TopAppBarShared(
+    nameTopBar: String,
+    showNavigationIcon: Boolean = false,
+    onNavigationClick: (() -> Unit)? = null
+) {
     TopAppBar(
         title = {
             Text(
@@ -54,6 +60,18 @@ fun TopAppBarShared(nameTopBar: String) {
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
+        },
+        navigationIcon = {
+            if (showNavigationIcon && onNavigationClick != null) {
+                IconButton(onClick = onNavigationClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.Black
+                    )
+                }
+
+            } else null
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color(0xFFF3F4F6), // Gris claro más notorio
@@ -125,34 +143,6 @@ fun MainFabForTab(
     }
 }
 
-@Composable
-fun ActionCircleButton(
-    icon: ImageVector,
-    contentDescription: String,
-    backgroundColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(48.dp)
-            .shadow(4.dp, CircleShape)
-            .background(backgroundColor, shape = CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(
-                icon,
-                contentDescription = contentDescription,
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-    }
-}
 
 @Composable
 fun ActionSquareButton(

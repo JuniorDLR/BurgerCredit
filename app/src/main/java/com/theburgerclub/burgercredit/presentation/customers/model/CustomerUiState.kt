@@ -4,5 +4,7 @@ import com.theburgerclub.burgercredit.domain.model.Customer
 
 data class CustomerUiState(
     val customers: List<Customer> = emptyList(),
-    val selectedCustomer: Customer? = null
+    val selectedCustomer: Customer? = null,
+    val customerInput: String = "",
+    val customerInputError: String? = null
 ) 

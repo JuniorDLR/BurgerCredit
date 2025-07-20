@@ -32,16 +32,19 @@ import com.theburgerclub.burgercredit.presentation.theme.BurgerOrange
 import com.theburgerclub.burgercredit.presentation.theme.BurgerWhite
 import com.theburgerclub.burgercredit.presentation.theme.BurgerBlack
 import com.theburgerclub.burgercredit.presentation.shared.MainFabForTab
+import androidx.navigation.NavController
+import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 
 @Composable
 fun MainScreen(
-    modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = hiltViewModel()
-) {
+    navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel(),
+
+    ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        modifier = modifier,
+        modifier = Modifier,
         bottomBar = {
             MainBottomNavigation(
                 selectedTab = uiState.selectedTab,
@@ -49,7 +52,11 @@ fun MainScreen(
             )
         },
         floatingActionButton = {
-            MainFabForTab(selectedTab = uiState.selectedTab, onAdd = { })
+            MainFabForTab(selectedTab = uiState.selectedTab, onAdd = {
+                if (uiState.selectedTab == HomeTab.CUSTOMERS) {
+                    navController.navigate(AppRoute.AddCustomerScreen.route)
+                }
+            })
         },
         floatingActionButtonPosition = FabPosition.End
     ) { paddingValues ->
@@ -68,7 +75,7 @@ fun MainBottomNavigation(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
-    
+
     // Responsive sizing
     val iconSize = when {
         screenWidth < 320 -> 20.dp  // Very small screens
@@ -76,19 +83,19 @@ fun MainBottomNavigation(
         screenWidth > 720 -> 28.dp  // Large screens (tablets)
         else -> 24.dp               // Default
     }
-    
+
     val fontSize = when {
         screenWidth < 320 -> 10.sp   // Very small screens
         screenWidth < 480 -> 11.sp   // Small screens
         screenWidth > 720 -> 14.sp   // Large screens (tablets)
         else -> 12.sp                // Default
     }
-    
+
     val elevation = when {
         screenWidth > 720 -> 12.dp   // Large screens (tablets)
         else -> 8.dp                 // Default
     }
-    
+
     BottomAppBar(
         containerColor = BurgerWhite,
         contentColor = BurgerBlack,
@@ -105,12 +112,12 @@ fun MainBottomNavigation(
                     size = iconSize
                 )
             },
-            label = { 
+            label = {
                 Text(
                     text = "Home",
                     fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.HOME) FontWeight.Bold else FontWeight.Normal
-                ) 
+                )
             },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = BurgerOrange,
@@ -132,12 +139,12 @@ fun MainBottomNavigation(
                     size = iconSize
                 )
             },
-            label = { 
+            label = {
                 Text(
                     text = "Customers",
                     fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.CUSTOMERS) FontWeight.Bold else FontWeight.Normal
-                ) 
+                )
             },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = BurgerOrange,
@@ -159,12 +166,12 @@ fun MainBottomNavigation(
                     size = iconSize
                 )
             },
-            label = { 
+            label = {
                 Text(
                     text = "Dishes",
                     fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.DISHES) FontWeight.Bold else FontWeight.Normal
-                ) 
+                )
             },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = BurgerOrange,
@@ -186,12 +193,12 @@ fun MainBottomNavigation(
                     size = iconSize
                 )
             },
-            label = { 
+            label = {
                 Text(
                     text = "Debts",
                     fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.DEBTS) FontWeight.Bold else FontWeight.Normal
-                ) 
+                )
             },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = BurgerOrange,

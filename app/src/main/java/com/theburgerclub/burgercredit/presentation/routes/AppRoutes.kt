@@ -11,6 +11,7 @@ sealed class AppRoute(val route: String) {
     // Clientes
     object CustomerScreen : AppRoute("customer")
     object EditCustomerScreen : AppRoute("editCustomer/{customerId}")
+    object AddCustomerScreen : AppRoute("addCustomer")
 
     // Platos
     object DishesScreen : AppRoute("dishes")

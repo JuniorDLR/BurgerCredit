@@ -65,4 +65,29 @@ class CustomerViewModel @Inject constructor(
             }
         }
     }
+
+    suspend fun validateAndAddCustomer(): Boolean {
+        val name = customerUiState.value.customerInput
+        if (name.isBlank()) {
+            _customerUiState.update { it.copy(customerInputError = "Name cannot be empty") }
+            return false
+        }
+        _customerUiState.update { it.copy(customerInputError = null) }
+        try {
+            customerUseCase.addCustomer(Customer(name = name))
+            clearCustomerInput()
+            return true
+        } catch (e: Exception) {
+            _customerUiState.update { it.copy(customerInputError = e.message ?: "Unknown error") }
+            return false
+        }
+    }
+
+    fun onCustomerInputChange(newValue: String) {
+        _customerUiState.update { it.copy(customerInput = newValue, customerInputError = null) }
+    }
+
+    private fun clearCustomerInput() {
+        _customerUiState.update { it.copy(customerInput = "") }
+    }
 } 

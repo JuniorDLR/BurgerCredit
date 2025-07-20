@@ -46,6 +46,12 @@ import androidx.compose.runtime.setValue
 import com.theburgerclub.burgercredit.presentation.shared.ActionSquareButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.theburgerclub.burgercredit.presentation.customers.viewmodel.CustomerViewModel
+import androidx.compose.runtime.collectAsState
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.theburgerclub.burgercredit.domain.model.Customer
 
 
 @Composable
@@ -60,30 +66,17 @@ fun CustomersTab() {
 
 
 @Composable
-fun CustomersBody(modifier: Modifier = Modifier) {
-    val clients = listOf(
-        Client("Lucas Carter", Icons.Default.Person),
-        Client("Sophia Bennett", Icons.Default.Person),
-        Client("Owen Thompson", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Isabella Harper", Icons.Default.Person),
-        Client("Ethan Foster", Icons.Default.Person)
-    )
+fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = hiltViewModel()) {
+    val uiState by viewModel.customerUiState.collectAsState()
+    val context = LocalContext.current
+    val clients = uiState.customers.map {
+        Client(
+            name = it.name,
+            icon = Icons.Default.Person
+        )
+    }
+    fun getCustomerByName(name: String): Customer? = uiState.customers.find { it.name == name }
+
     Column(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             OutlinedTextField(
@@ -111,8 +104,14 @@ fun CustomersBody(modifier: Modifier = Modifier) {
         }
         ClientList(
             clients = clients,
-            onEdit = { /* Acción editar */ },
-            onDelete = { /* Acción borrar */ }
+            onEdit = {  },
+            onDelete = { client ->
+                val customer = getCustomerByName(client.name)
+                if (customer != null) {
+                    viewModel.deleteCustomer(customer)
+                    Toast.makeText(context, "Customer deleted successfully!", Toast.LENGTH_SHORT).show()
+                }
+            }
         )
     }
 }
@@ -250,6 +249,53 @@ fun SwipeableClientCard(
 
 @Composable
 fun ClientList(
+    clients: List<Client>,
+    onEdit: (Client) -> Unit,
+    onDelete: (Client) -> Unit
+) {
+    if (clients.isEmpty()) {
+        EmptyClientsMessage()
+    } else {
+        ClientsLazyList(clients, onEdit, onDelete)
+    }
+}
+
+@Composable
+fun EmptyClientsMessage() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = 64.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null,
+                tint = Color(0xFFB0B0B0),
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "No clients registered yet",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    color = Color(0xFFB0B0B0),
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Tap the + button to add your first client!",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color(0xFFB0B0B0)
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun ClientsLazyList(
     clients: List<Client>,
     onEdit: (Client) -> Unit,
     onDelete: (Client) -> Unit

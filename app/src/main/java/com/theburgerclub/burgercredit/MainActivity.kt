@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.theburgerclub.burgercredit.presentation.customers.ui.AddCustomersScreen
 
 import com.theburgerclub.burgercredit.presentation.home.ui.MainScreen
 import com.theburgerclub.burgercredit.presentation.login.ui.LoginScreen
@@ -40,7 +41,8 @@ fun AppNavGraph() {
     ) {
         composable(route = AppRoute.LoginScreen.route) { LoginScreen(navController) }
         composable(route = AppRoute.RegisterScreen.route) { SignUpScreen(navController) }
-        composable(route = AppRoute.HomeScreen.route) { MainScreen() }
+        composable(route = AppRoute.HomeScreen.route) { MainScreen(navController) }
+        composable(route = AppRoute.AddCustomerScreen.route) { AddCustomersScreen(navController) }
         // composable(AppRoute.CustomerScreen.route) { ... }
         // composable(AppRoute.EditCustomerScreen.route) { ... }
         // composable(AppRoute.DishesScreen.route) { ... }
