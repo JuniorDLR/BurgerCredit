@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theburgerclub.burgercredit.presentation.login.model.SignUpUiState
 import com.theburgerclub.burgercredit.presentation.login.model.SignUpResultState
+import com.theburgerclub.burgercredit.domain.usecase.AdminUseCase
+import com.theburgerclub.burgercredit.domain.model.Admin
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +17,9 @@ import android.util.Log
 import javax.inject.Inject
 
 @HiltViewModel
-class SignUpViewModel @Inject constructor() : ViewModel() {
+class SignUpViewModel @Inject constructor(
+    private val adminUseCase: AdminUseCase
+) : ViewModel() {
 
     private val _signUpUiState = MutableStateFlow(SignUpUiState())
     val signUpUiState: StateFlow<SignUpUiState> = _signUpUiState.asStateFlow()
@@ -121,15 +125,49 @@ class SignUpViewModel @Inject constructor() : ViewModel() {
 
             if (!hasErrors) {
                 try {
+                    // Check if username already exists
+                    val usernameExists = adminUseCase.checkUsernameExists(username)
+                    if (usernameExists) {
+                        _signUpUiState.update {
+                            it.copy(
+                                usernameError = "Username already exists",
+                                result = SignUpResultState.Error("Username already exists")
+                            )
+                        }
+                        return@launch
+                    }
 
-                    // Simulate sign up process
-                    delay(2000)
-                    // Set success state
-                    _signUpUiState.update {
-                        it.copy(result = SignUpResultState.Success)
+                    // Check if admin already exists (only one admin allowed)
+                    val existingAdmin = adminUseCase.getAdmin()
+                    if (existingAdmin != null) {
+                        _signUpUiState.update {
+                            it.copy(result = SignUpResultState.Error("Admin already exists. Only one admin is allowed."))
+                        }
+                        return@launch
+                    }
+
+                    // Create new admin
+                    val newAdmin = Admin(
+                        username = username,
+                        password = password // In production, this should be hashed
+                    )
+                    
+                    val adminId = adminUseCase.createAdmin(newAdmin)
+                    
+                    if (adminId > 0) {
+                        // Success
+                        _signUpUiState.update {
+                            it.copy(result = SignUpResultState.Success)
+                        }
+                    } else {
+                        // Failed to create admin
+                        _signUpUiState.update {
+                            it.copy(result = SignUpResultState.Error("Failed to create admin account"))
+                        }
                     }
                 } catch (e: Exception) {
                     // Handle error
+                    Log.e("SignUpViewModel", "Error creating admin", e)
                     _signUpUiState.update {
                         it.copy(result = SignUpResultState.Error("Sign up failed. Please try again."))
                     }

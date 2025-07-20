@@ -4,16 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theburgerclub.burgercredit.presentation.login.model.LoginUiState
 import com.theburgerclub.burgercredit.presentation.login.model.LoginResultState
+import com.theburgerclub.burgercredit.domain.usecase.AdminUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginViewModel @Inject constructor() : ViewModel() {
+class LoginViewModel @Inject constructor(
+    private val adminUseCase: AdminUseCase
+) : ViewModel() {
     private val _loginUiState = MutableStateFlow(LoginUiState())
     val loginUiState: StateFlow<LoginUiState> = _loginUiState.asStateFlow()
 
@@ -43,46 +47,66 @@ class LoginViewModel @Inject constructor() : ViewModel() {
             result = LoginResultState.Loading
         )
         
-        // Simular verificación después de 3 segundos
         viewModelScope.launch {
-            delay(2000) // Esperar 3 segundos
-            
-            // Después de 3 segundos, verificar si hay errores de validación
-            var hasErrors = false
-            var usernameError: String? = null
-            var passwordError: String? = null
+            try {
+                // Validar campos
+                var hasErrors = false
+                var usernameError: String? = null
+                var passwordError: String? = null
 
-            // Validar username
-            if (state.username.isBlank()) {
-                usernameError = "Username cannot be empty"
-                hasErrors = true
-            }
+                // Validar username
+                if (state.username.isBlank()) {
+                    usernameError = "Username cannot be empty"
+                    hasErrors = true
+                }
 
-            // Validar password
-            when {
-                state.password.isBlank() -> {
+                // Validar password
+                if (state.password.isBlank()) {
                     passwordError = "Password cannot be empty"
                     hasErrors = true
-                }
-                state.password.length < 8 -> {
-                    passwordError = "Password must be at least 8 characters"
+                } else if (state.password.length < 6) {
+                    passwordError = "Password must be at least 6 characters"
                     hasErrors = true
                 }
-            }
 
-            if (hasErrors) {
-                // Si hay errores de validación, mostrarlos
-                _loginUiState.value = _loginUiState.value.copy(
-                    usernameError = usernameError,
-                    passwordError = passwordError,
-                    result = LoginResultState.Idle
+                if (hasErrors) {
+                    // Si hay errores de validación, mostrarlos
+                    _loginUiState.value = _loginUiState.value.copy(
+                        usernameError = usernameError,
+                        passwordError = passwordError,
+                        result = LoginResultState.Idle
+                    )
+                    return@launch
+                }
+
+                // Intentar autenticar con la base de datos
+                val authenticatedAdmin = adminUseCase.authenticateAdmin(
+                    username = state.username,
+                    password = state.password
                 )
-            } else {
-                // Si no hay errores de validación, simular error de login
+
+                if (authenticatedAdmin != null) {
+                    // Login exitoso
+                    _loginUiState.value = _loginUiState.value.copy(
+                        usernameError = null,
+                        passwordError = null,
+                        result = LoginResultState.Success
+                    )
+                    Log.d("LoginViewModel", "Login successful for user: ${authenticatedAdmin.username}")
+                } else {
+                    // Login fallido
+                    _loginUiState.value = _loginUiState.value.copy(
+                        usernameError = null,
+                        passwordError = null,
+                        result = LoginResultState.Error("Invalid username or password")
+                    )
+                    Log.d("LoginViewModel", "Login failed for username: ${state.username}")
+                }
+                
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "Error during login", e)
                 _loginUiState.value = _loginUiState.value.copy(
-                    usernameError = null,
-                    passwordError = null,
-                    result = LoginResultState.Error("Invalid username or password")
+                    result = LoginResultState.Error("Login failed. Please try again.")
                 )
             }
         }

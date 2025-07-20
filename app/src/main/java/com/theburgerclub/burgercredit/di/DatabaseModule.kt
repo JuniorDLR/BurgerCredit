@@ -6,6 +6,7 @@ import com.theburgerclub.burgercredit.data.local.database.AppDatabase
 import com.theburgerclub.burgercredit.data.local.dao.CustomerDao
 import com.theburgerclub.burgercredit.data.local.dao.DishDao
 import com.theburgerclub.burgercredit.data.local.dao.DebtDao
+import com.theburgerclub.burgercredit.data.local.dao.AdminDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,4 +35,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDebtDao(db: AppDatabase): DebtDao = db.debtDao()
+
+    @Provides
+    fun provideAdminDao(db: AppDatabase): AdminDao = db.adminDao()
 } 
