@@ -6,6 +6,7 @@ import com.theburgerclub.burgercredit.domain.model.Customer
 import com.theburgerclub.burgercredit.domain.usecase.CustomerUseCase
 import com.theburgerclub.burgercredit.presentation.customers.model.CustomerUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,12 +76,23 @@ class CustomerViewModel @Inject constructor(
     }
 
     fun clearCustomerInput() {
-        _customerUiState.update {
+        _customerUiState.update { 
             it.copy(
                 customerInput = "",
                 lastNameInput = "",
                 customerInputError = null,
-                lastNameInputError = null
+                lastNameInputError = null,
+                isLoading = false
+            )
+        }
+    }
+
+    fun clearErrors() {
+        _customerUiState.update { 
+            it.copy(
+                customerInputError = null,
+                lastNameInputError = null,
+                isLoading = false
             )
         }
     }
@@ -112,12 +124,37 @@ class CustomerViewModel @Inject constructor(
             return false
         }
         
+        // Activar loading
+        _customerUiState.update { it.copy(isLoading = true) }
+        
         try {
+            // Pequeño delay para que se vea el loading
+            delay(1000)
+            
+            // Verificar si ya existe un cliente con el mismo nombre y apellido (case-insensitive)
+            val existingCustomer = customerUseCase.getCustomerByNameAndLastName(name.lowercase(), lastName.lowercase())
+            if (existingCustomer != null) {
+                _customerUiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        customerInputError = "A customer with this name and last name already exists"
+                    )
+                }
+                return false
+            }
+            
+            // Si no existe, agregar el cliente
             customerUseCase.addCustomer(Customer(name = name, lastName = lastName))
             clearCustomerInput()
+            _customerUiState.update { it.copy(isLoading = false) }
             return true
         } catch (e: Exception) {
-            _customerUiState.update { it.copy(customerInputError = e.message ?: "Unknown error") }
+            _customerUiState.update { 
+                it.copy(
+                    isLoading = false,
+                    customerInputError = e.message ?: "Unknown error"
+                )
+            }
             return false
         }
     }

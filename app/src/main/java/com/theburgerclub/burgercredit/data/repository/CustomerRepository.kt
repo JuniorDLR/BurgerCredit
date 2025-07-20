@@ -27,4 +27,7 @@ class CustomerRepository @Inject constructor(
 
     fun searchCustomersByName(name: String): Flow<List<CustomerEntity>> =
         customerDao.searchCustomersByName(name)
+
+    suspend fun getCustomerByNameAndLastName(name: String, lastName: String): CustomerEntity? =
+        customerDao.getCustomerByNameAndLastName(name, lastName)
 } 

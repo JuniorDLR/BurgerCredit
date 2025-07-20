@@ -94,22 +94,36 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
             ) {
                 SharedOutlinedTextField(
                     value = uiState.customerInput,
-                    onValueChange = { viewModel.onCustomerInputChange(it) },
+                    onValueChange = { 
+                        viewModel.onCustomerInputChange(it)
+                        if (uiState.customerInputError != null) {
+                            viewModel.clearErrors()
+                        }
+                    },
                     label = "Name",
                     placeholder = "Enter customer name",
                     isError = uiState.customerInputError != null,
                     errorMessage = uiState.customerInputError,
+                    modifier = Modifier.fillMaxWidth(),
                     fontSize = fontSize,
                     minHeight = textFieldMinHeight
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+
+                Spacer(modifier = Modifier.height(betweenFieldsSpace))
+
                 SharedOutlinedTextField(
                     value = uiState.lastNameInput,
-                    onValueChange = { viewModel.onLastNameInputChange(it) },
+                    onValueChange = { 
+                        viewModel.onLastNameInputChange(it)
+                        if (uiState.lastNameInputError != null) {
+                            viewModel.clearErrors()
+                        }
+                    },
                     label = "Last Name",
                     placeholder = "Enter customer last name",
                     isError = uiState.lastNameInputError != null,
                     errorMessage = uiState.lastNameInputError,
+                    modifier = Modifier.fillMaxWidth(),
                     fontSize = fontSize,
                     minHeight = textFieldMinHeight
                 )
@@ -127,12 +141,20 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(buttonHeight),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !uiState.isLoading
                 ) {
-                    Text(
-                        text = "Save",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = fontSize)
-                    )
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Save",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = fontSize)
+                        )
+                    }
                 }
             }
         }

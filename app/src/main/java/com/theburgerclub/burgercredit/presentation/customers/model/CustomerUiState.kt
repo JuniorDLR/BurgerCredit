@@ -8,5 +8,6 @@ data class CustomerUiState(
     val customerInput: String = "",
     val lastNameInput: String = "",
     val customerInputError: String? = null,
-    val lastNameInputError: String? = null
+    val lastNameInputError: String? = null,
+    val isLoading: Boolean = false
 ) 

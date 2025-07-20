@@ -29,4 +29,8 @@ interface CustomerDao {
     // Buscar clientes por nombre
     @Query("SELECT * FROM customers WHERE name LIKE '%' || :name || '%' ORDER BY name ASC")
     fun searchCustomersByName(name: String): Flow<List<CustomerEntity>>
+
+    // Verificar si existe un cliente con el mismo nombre y apellido
+    @Query("SELECT * FROM customers WHERE LOWER(name) = LOWER(:name) AND LOWER(lastName) = LOWER(:lastName) LIMIT 1")
+    suspend fun getCustomerByNameAndLastName(name: String, lastName: String): CustomerEntity?
 } 
