@@ -1,25 +1,274 @@
 package com.theburgerclub.burgercredit.presentation.customers.ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.theburgerclub.burgercredit.presentation.customers.model.Client
+import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import com.theburgerclub.burgercredit.presentation.shared.ActionSquareButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.platform.LocalDensity
+
 
 @Composable
 fun CustomersTab() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Clientes",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
+    Scaffold(
+        topBar = { TopAppBarShared(nameTopBar = "Managing Clients") },
+        floatingActionButtonPosition = androidx.compose.material3.FabPosition.End
+    ) { innerPadding ->
+        CustomersBody(Modifier.padding(innerPadding))
+    }
+}
+
+
+@Composable
+fun CustomersBody(modifier: Modifier = Modifier) {
+    val clients = listOf(
+        Client("Lucas Carter", Icons.Default.Person),
+        Client("Sophia Bennett", Icons.Default.Person),
+        Client("Owen Thompson", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Isabella Harper", Icons.Default.Person),
+        Client("Ethan Foster", Icons.Default.Person)
+    )
+    Column(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+            OutlinedTextField(
+                value = "",
+                onValueChange = { },
+                placeholder = { Text("Search clients", color = Color(0xFFB0B0B0)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedContainerColor = Color(0xFFF7F7F9),
+                    focusedContainerColor = Color(0xFFF7F7F9),
+                    cursorColor = MaterialTheme.colorScheme.primary
+                )
+            )
+            Text(
+                text = "Existing Clients",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+        ClientList(
+            clients = clients,
+            onEdit = { /* Acción editar */ },
+            onDelete = { /* Acción borrar */ }
         )
     }
-} 
+}
+
+@Composable
+fun ClientCard(
+    name: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height = 70.dp)
+            .background(Color.White) // O el color de tu tema
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableClientCard(
+    name: String,
+    icon: ImageVector,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val buttonWidth = 80.dp
+    val actionsWidth = buttonWidth * 2
+    val density = LocalDensity.current
+    val maxSwipe = with(density) { actionsWidth.toPx() }
+    val itemHeight = 70.dp
+    val swipeOffset = remember { Animatable(0f) }
+    var isRevealed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxWidth().height(itemHeight)) {
+        // Fondo de acciones SOLO del ancho de los botones
+        Row(
+            modifier = Modifier
+                .width(actionsWidth)
+                .fillMaxHeight()
+                .align(Alignment.CenterEnd)
+                .background(Color.White),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ActionSquareButton(
+                modifier = Modifier.width(80.dp).fillMaxHeight(),
+                icon = Icons.Default.Edit,
+                label = "Editar",
+                backgroundColor = Color(0xFFA5D6A7), // Verde menta suave
+                onClick = {
+                    onEdit()
+                    scope.launch {
+                        swipeOffset.animateTo(0f, tween(300))
+                        isRevealed = false
+                    }
+                }
+            )
+            ActionSquareButton(
+                modifier = Modifier.width(80.dp).fillMaxHeight(),
+                icon = Icons.Default.Delete,
+                label = "Eliminar",
+                backgroundColor = Color(0xFFE57373), // Rojo suave pero con buena intensidad
+                onClick = {
+                    onDelete()
+                    scope.launch {
+                        swipeOffset.animateTo(0f, tween(300))
+                        isRevealed = false
+                    }
+                }
+            )
+        }
+        // Card deslizable (sin fondo ni borde extra)
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(swipeOffset.value.toInt(), 0) }
+                .fillMaxWidth()
+                .height(itemHeight)
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            scope.launch {
+                                if (swipeOffset.value < -maxSwipe / 2) {
+                                    swipeOffset.animateTo(-maxSwipe, tween(200))
+                                    isRevealed = true
+                                } else {
+                                    swipeOffset.animateTo(0f, tween(200))
+                                    isRevealed = false
+                                }
+                            }
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newOffset = (swipeOffset.value + dragAmount).coerceIn(-maxSwipe, 0f)
+                            scope.launch { swipeOffset.snapTo(newOffset) }
+                        }
+                    )
+                }
+                .pointerInput(isRevealed) {
+                    if (isRevealed) {
+                        detectTapGestures {
+                            scope.launch {
+                                swipeOffset.animateTo(0f, tween(200))
+                                isRevealed = false
+                            }
+                        }
+                    }
+                }
+        ) {
+            ClientCard(name = name, icon = icon)
+        }
+    }
+}
+
+@Composable
+fun ClientList(
+    clients: List<Client>,
+    onEdit: (Client) -> Unit,
+    onDelete: (Client) -> Unit
+) {
+    LazyColumn {
+        items(clients) { client ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                SwipeableClientCard(
+                    name = client.name,
+                    icon = client.icon,
+                    onEdit = { onEdit(client) },
+                    onDelete = { onDelete(client) }
+                )
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = Color(0xFFE0E0E0) // Gris claro, puedes ajustar
+                )
+            }
+        }
+    }
+}
+

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
 import com.theburgerclub.burgercredit.presentation.home.ui.MainScreen
 import com.theburgerclub.burgercredit.presentation.login.ui.LoginScreen
 import com.theburgerclub.burgercredit.presentation.login.ui.SignUpScreen

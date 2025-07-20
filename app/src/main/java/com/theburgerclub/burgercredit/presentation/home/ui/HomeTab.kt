@@ -16,11 +16,10 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.LottieConstants
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.painterResource
 import com.theburgerclub.burgercredit.R
+import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +27,7 @@ fun HomeTab() {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
     val screenWidth = configuration.screenWidthDp
-    
+
     // Responsive sizing
     val contentPadding = when {
         screenWidth < 320 -> 12.dp  // Very small screens
@@ -36,18 +35,16 @@ fun HomeTab() {
         screenWidth > 720 -> 24.dp  // Large screens (tablets)
         else -> 16.dp               // Default
     }
-    
+
     val spacing = when {
         screenHeight < 600 -> 16.dp   // Small screens
         screenHeight < 800 -> 20.dp   // Medium screens
         screenWidth > 720 -> 32.dp    // Large screens (tablets)
         else -> 24.dp                 // Default
     }
-    
+
     Scaffold(
-        topBar = {
-            HomeTopAppBar()
-        }
+        topBar = { TopAppBarShared(nameTopBar = "Home") }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -64,14 +61,13 @@ fun HomeTab() {
             item {
                 HomeBanner()
             }
-            
+
             item {
                 HomeSummarySection()
             }
         }
     }
 }
-
 
 
 @Composable
@@ -135,7 +131,9 @@ fun HomeBanner() {
                 LottieAnimation(
                     composition = composition,
                     iterations = LottieConstants.IterateForever,
-                    modifier = Modifier.size(lottieSize).fillMaxHeight()
+                    modifier = Modifier
+                        .size(lottieSize)
+                        .fillMaxHeight()
                 )
             }
             Spacer(modifier = Modifier.width(rowSpacing))
@@ -149,7 +147,7 @@ fun HomeBanner() {
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Bienvenido a",
+                    text = "Welcome to",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
@@ -164,7 +162,7 @@ fun HomeBanner() {
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Tu espacio para administrar créditos",
+                    text = "Your space to manage credits",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -179,7 +177,7 @@ fun HomeSummarySection() {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
-    
+
     // Responsive sizing
     val spacing = when {
         screenWidth < 320 -> 12.dp  // Very small screens
@@ -187,17 +185,17 @@ fun HomeSummarySection() {
         screenWidth > 720 -> 20.dp  // Large screens (tablets)
         else -> 16.dp               // Default
     }
-    
+
     val cardSpacing = when {
         screenWidth < 320 -> 8.dp   // Very small screens
         screenWidth < 480 -> 10.dp  // Small screens
         screenWidth > 720 -> 16.dp  // Large screens (tablets)
         else -> 12.dp               // Default
     }
-    
+
     // Check if screen is in landscape mode
     val isLandscape = screenWidth > screenHeight
-    
+
     Column(
         verticalArrangement = Arrangement.spacedBy(spacing)
     ) {
@@ -208,7 +206,7 @@ fun HomeSummarySection() {
             ),
             color = MaterialTheme.colorScheme.onSurface
         )
-        
+
         if (isLandscape) {
             // Single row layout for landscape
             Row(
@@ -222,21 +220,21 @@ fun HomeSummarySection() {
                     modifier = Modifier.weight(1f),
                     isPositive = true
                 )
-                
+
                 SummaryCard(
                     title = "Total Customers",
                     value = "120",
                     subtitle = "With active debts",
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 SummaryCard(
                     title = "Active Debts",
                     value = "150",
                     subtitle = "Pending payments",
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 SummaryCard(
                     title = "Overdue Debts",
                     value = "23",
@@ -258,7 +256,7 @@ fun HomeSummarySection() {
                     modifier = Modifier.weight(1f),
                     isPositive = true
                 )
-                
+
                 SummaryCard(
                     title = "Total Customers",
                     value = "120",
@@ -266,7 +264,7 @@ fun HomeSummarySection() {
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(cardSpacing)
@@ -277,7 +275,7 @@ fun HomeSummarySection() {
                     subtitle = "Pending payments",
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 SummaryCard(
                     title = "Overdue Debts",
                     value = "23",
@@ -302,7 +300,7 @@ fun SummaryCard(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
-    
+
     // Responsive sizing
     val padding = when {
         screenWidth < 320 -> 12.dp  // Very small screens
@@ -310,47 +308,47 @@ fun SummaryCard(
         screenWidth > 720 -> 20.dp  // Large screens (tablets)
         else -> 16.dp               // Default
     }
-    
+
     val titleFontSize = when {
         screenWidth < 320 -> 12.sp   // Very small screens
         screenWidth < 480 -> 13.sp   // Small screens
         screenWidth > 720 -> 16.sp   // Large screens (tablets)
         else -> 14.sp                // Default
     }
-    
+
     val valueFontSize = when {
         screenHeight < 600 -> 18.sp   // Small screens
         screenHeight < 800 -> 20.sp   // Medium screens
         screenWidth > 720 -> 28.sp    // Large screens (tablets)
         else -> 22.sp                 // Default
     }
-    
+
     val spacing = when {
         screenHeight < 600 -> 6.dp    // Small screens
         screenHeight < 800 -> 7.dp    // Medium screens
         screenWidth > 720 -> 12.dp    // Large screens (tablets)
         else -> 8.dp                  // Default
     }
-    
+
     // Determine card colors based on status - Different from banner
     val cardColor = when {
         isWarning -> MaterialTheme.colorScheme.errorContainer
         isPositive -> MaterialTheme.colorScheme.secondaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
-    
+
     val valueColor = when {
         isWarning -> MaterialTheme.colorScheme.onErrorContainer
         isPositive -> MaterialTheme.colorScheme.onSecondaryContainer
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    
+
     val subtitleColor = when {
         isWarning -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
         isPositive -> MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
         else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
     }
-    
+
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
@@ -370,9 +368,9 @@ fun SummaryCard(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             Spacer(modifier = Modifier.height(spacing))
-            
+
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -381,10 +379,10 @@ fun SummaryCard(
                 ),
                 color = valueColor
             )
-            
+
             if (subtitle != null) {
                 Spacer(modifier = Modifier.height(spacing / 2))
-                
+
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall.copy(
@@ -399,23 +397,3 @@ fun SummaryCard(
 }
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HomeTopAppBar() {
-    TopAppBar(
-        title = {
-            Text(
-                text = "Home",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface
-        )
-    )
-} 
