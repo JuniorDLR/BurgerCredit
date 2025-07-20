@@ -43,7 +43,12 @@ fun HomeTab() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(contentPadding),
+            contentPadding = PaddingValues(
+                top = contentPadding,
+                start = contentPadding,
+                end = contentPadding,
+                bottom = contentPadding + 80.dp // Extra space for bottom navigation
+            ),
             verticalArrangement = Arrangement.spacedBy(spacing)
         ) {
             item {
@@ -52,10 +57,6 @@ fun HomeTab() {
             
             item {
                 HomeSummarySection()
-            }
-            
-            item {
-                HomeQuickActionsSection()
             }
         }
     }
@@ -121,6 +122,7 @@ fun HomeBanner() {
 fun HomeSummarySection() {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
+    val screenHeight = configuration.screenHeightDp
     
     // Responsive sizing
     val spacing = when {
@@ -137,6 +139,9 @@ fun HomeSummarySection() {
         else -> 12.dp               // Default
     }
     
+    // Check if screen is in landscape mode
+    val isLandscape = screenWidth > screenHeight
+    
     Column(
         verticalArrangement = Arrangement.spacedBy(spacing)
     ) {
@@ -148,30 +153,84 @@ fun HomeSummarySection() {
             color = MaterialTheme.colorScheme.onSurface
         )
         
-        // Summary cards row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(cardSpacing)
-        ) {
-            SummaryCard(
-                title = "Total Customers with Debt",
-                value = "120",
-                modifier = Modifier.weight(1f)
-            )
+        if (isLandscape) {
+            // Single row layout for landscape
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(cardSpacing)
+            ) {
+                SummaryCard(
+                    title = "Total Outstanding Debt",
+                    value = "$5,400",
+                    subtitle = "+$320 this month",
+                    modifier = Modifier.weight(1f),
+                    isPositive = true
+                )
+                
+                SummaryCard(
+                    title = "Total Customers",
+                    value = "120",
+                    subtitle = "With active debts",
+                    modifier = Modifier.weight(1f)
+                )
+                
+                SummaryCard(
+                    title = "Active Debts",
+                    value = "150",
+                    subtitle = "Pending payments",
+                    modifier = Modifier.weight(1f)
+                )
+                
+                SummaryCard(
+                    title = "Overdue Debts",
+                    value = "23",
+                    subtitle = "Requires attention",
+                    modifier = Modifier.weight(1f),
+                    isWarning = true
+                )
+            }
+        } else {
+            // Two rows layout for portrait
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(cardSpacing)
+            ) {
+                SummaryCard(
+                    title = "Total Outstanding Debt",
+                    value = "$5,400",
+                    subtitle = "+$320 this month",
+                    modifier = Modifier.weight(1f),
+                    isPositive = true
+                )
+                
+                SummaryCard(
+                    title = "Total Customers",
+                    value = "120",
+                    subtitle = "With active debts",
+                    modifier = Modifier.weight(1f)
+                )
+            }
             
-            SummaryCard(
-                title = "Total Outstanding Debt",
-                value = "$5,400",
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(cardSpacing)
+            ) {
+                SummaryCard(
+                    title = "Active Debts",
+                    value = "150",
+                    subtitle = "Pending payments",
+                    modifier = Modifier.weight(1f)
+                )
+                
+                SummaryCard(
+                    title = "Overdue Debts",
+                    value = "23",
+                    subtitle = "Requires attention",
+                    modifier = Modifier.weight(1f),
+                    isWarning = true
+                )
+            }
         }
-        
-        // Full width card
-        SummaryCard(
-            title = "Active Debts",
-            value = "150",
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
@@ -179,7 +238,10 @@ fun HomeSummarySection() {
 fun SummaryCard(
     title: String,
     value: String,
-    modifier: Modifier = Modifier
+    subtitle: String? = null,
+    modifier: Modifier = Modifier,
+    isPositive: Boolean = false,
+    isWarning: Boolean = false
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
@@ -214,10 +276,29 @@ fun SummaryCard(
         else -> 8.dp                  // Default
     }
     
+    // Determine card colors based on status - Different from banner
+    val cardColor = when {
+        isWarning -> MaterialTheme.colorScheme.errorContainer
+        isPositive -> MaterialTheme.colorScheme.secondaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    
+    val valueColor = when {
+        isWarning -> MaterialTheme.colorScheme.onErrorContainer
+        isPositive -> MaterialTheme.colorScheme.onSecondaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    
+    val subtitleColor = when {
+        isWarning -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
+        isPositive -> MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+    }
+    
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = cardColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -242,84 +323,26 @@ fun SummaryCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = valueFontSize
                 ),
-                color = MaterialTheme.colorScheme.onSurface
+                color = valueColor
             )
-        }
-    }
-}
-
-@Composable
-fun HomeQuickActionsSection() {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    
-    // Responsive sizing
-    val spacing = when {
-        screenWidth < 320 -> 12.dp  // Very small screens
-        screenWidth < 480 -> 14.dp  // Small screens
-        screenWidth > 720 -> 20.dp  // Large screens (tablets)
-        else -> 16.dp               // Default
-    }
-    
-    val buttonSpacing = when {
-        screenWidth < 320 -> 8.dp   // Very small screens
-        screenWidth < 480 -> 10.dp  // Small screens
-        screenWidth > 720 -> 16.dp  // Large screens (tablets)
-        else -> 12.dp               // Default
-    }
-    
-    Column(
-        verticalArrangement = Arrangement.spacedBy(spacing)
-    ) {
-        Text(
-            text = "Quick Actions",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        val quickActions = listOf(
-            "Manage Clients",
-            "Manage Dishes", 
-            "Record New Debt",
-            "View Delinquent Clients"
-        )
-        
-        Column(
-            verticalArrangement = Arrangement.spacedBy(buttonSpacing)
-        ) {
-            quickActions.forEach { action ->
-                QuickActionButton(
-                    text = action,
-                    onClick = {  }
+            
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(spacing / 2))
+                
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = titleFontSize * 0.8f
+                    ),
+                    textAlign = TextAlign.Center,
+                    color = subtitleColor
                 )
             }
         }
     }
 }
 
-@Composable
-fun QuickActionButton(
-    text: String,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary
-        )
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium
-            ),
-            color = MaterialTheme.colorScheme.onPrimary
-        )
-    }
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
