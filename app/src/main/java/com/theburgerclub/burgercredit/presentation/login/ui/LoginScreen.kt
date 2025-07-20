@@ -32,14 +32,19 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.theburgerclub.burgercredit.R
 import com.theburgerclub.burgercredit.presentation.login.viewmodel.LoginViewModel
 import kotlinx.coroutines.delay
 import com.theburgerclub.burgercredit.presentation.login.model.LoginResultState
+import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 
 
 @Composable
-fun LoginScreen(loginViewModel: LoginViewModel = hiltViewModel()) {
+fun LoginScreen(
+    navController: NavController,
+    loginViewModel: LoginViewModel = hiltViewModel()
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -52,12 +57,12 @@ fun LoginScreen(loginViewModel: LoginViewModel = hiltViewModel()) {
                 )
             )
     ) {
-        LoginBody(loginViewModel)
+        LoginBody(loginViewModel, navController)
     }
 }
 
 @Composable
-fun LoginBody(viewModel: LoginViewModel = hiltViewModel()) {
+fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavController) {
     val loginUiState by viewModel.loginUiState.collectAsState()
     var animationStep by remember { mutableIntStateOf(0) }
 
@@ -114,7 +119,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel()) {
             visible = animationStep >= 5,
             enter = fadeIn() + slideInVertically(initialOffsetY = { 60 })
         ) {
-            LoginButtons(viewModel)
+            LoginButtons(viewModel, navController)
         }
         AnimatedVisibility(
             visible = animationStep >= 6,
@@ -365,7 +370,7 @@ fun LoginActionButton(
 }
 
 @Composable
-fun LoginButtons(viewModel: LoginViewModel = hiltViewModel()) {
+fun LoginButtons(viewModel: LoginViewModel = hiltViewModel(), navController: NavController) {
     val loginUiState by viewModel.loginUiState.collectAsState()
 
     Column(
@@ -382,7 +387,7 @@ fun LoginButtons(viewModel: LoginViewModel = hiltViewModel()) {
         )
         LoginActionButton(
             text = "Sign Up",
-            onClick = { },
+            onClick = { navController.navigate(AppRoute.RegisterScreen.route) },
             containerColor = LoginColors.buttonSecondary,
             textColor = LoginColors.buttonText,
             isLoading = loginUiState.result is LoginResultState.Loading,

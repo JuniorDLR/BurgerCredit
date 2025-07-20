@@ -45,7 +45,7 @@ class LoginViewModel @Inject constructor() : ViewModel() {
         
         // Simular verificación después de 3 segundos
         viewModelScope.launch {
-            delay(3000) // Esperar 3 segundos
+            delay(2000) // Esperar 3 segundos
             
             // Después de 3 segundos, verificar si hay errores de validación
             var hasErrors = false
