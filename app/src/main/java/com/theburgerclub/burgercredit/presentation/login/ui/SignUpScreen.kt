@@ -58,11 +58,7 @@ fun SignUpScreen(
 
     Scaffold(
         topBar = {
-            SignUpTopAppBar(onBack = {
-                if (viewModel.isNotLoading()) {
-                    navController.popBackStack()
-                }
-            })
+            SignUpTopAppBar()
         }
     ) { paddingValues ->
         SignUpContent(
@@ -81,7 +77,7 @@ fun SignUpScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignUpTopAppBar(onBack: () -> Unit) {
+fun SignUpTopAppBar() {
     TopAppBar(
         title = {
             Text(
@@ -92,17 +88,6 @@ fun SignUpTopAppBar(onBack: () -> Unit) {
                     fontSize = 18.sp
                 )
             )
-        },
-        navigationIcon = {
-            IconButton(
-                onClick = { onBack() }
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White
-                )
-            }
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = LoginColors.logoBackground,
@@ -148,6 +133,8 @@ fun SignUpContent(
     val imeInsets = WindowInsets.ime.asPaddingValues()
     val keyboardHeight = imeInsets.calculateBottomPadding()
 
+    val controlsEnabled = signUpState.result !is SignUpResultState.Loading
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -177,7 +164,8 @@ fun SignUpContent(
                 label = "Username",
                 placeholder = "Username",
                 leadingIcon = Icons.Default.Person,
-                error = signUpState.usernameError
+                error = signUpState.usernameError,
+                enabled = controlsEnabled
             )
         }
 
@@ -190,7 +178,8 @@ fun SignUpContent(
                 placeholder = "Password",
                 leadingIcon = Icons.Default.Lock,
                 isPassword = true,
-                error = signUpState.passwordError
+                error = signUpState.passwordError,
+                enabled = controlsEnabled
             )
         }
 
@@ -203,7 +192,8 @@ fun SignUpContent(
                 placeholder = "Confirm Password",
                 leadingIcon = Icons.Default.Lock,
                 isPassword = true,
-                error = signUpState.confirmPasswordError
+                error = signUpState.confirmPasswordError,
+                enabled = controlsEnabled
             )
         }
 
@@ -344,16 +334,17 @@ fun SignUpTextField(
     placeholder: String,
     leadingIcon: ImageVector,
     isPassword: Boolean = false,
-    error: String? = null
+    error: String? = null,
+    enabled: Boolean = true
 ) {
 
     Column(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth()
-            ,
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
+            enabled = enabled,
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = LoginColors.inputBackground,
                 focusedContainerColor = LoginColors.inputBackground,

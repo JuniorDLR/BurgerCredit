@@ -50,6 +50,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 
 @Composable
@@ -58,32 +60,40 @@ fun LoginScreen(
     loginViewModel: LoginViewModel = hiltViewModel()
 ) {
     val loginUiState by loginViewModel.loginUiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(loginUiState.result) {
         when (val result = loginUiState.result) {
             is LoginResultState.Error -> {
-                snackbarHostState.showSnackbar(result.message)
+                Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
             }
+
             is LoginResultState.Success -> {
-                snackbarHostState.showSnackbar("Login exitoso")
-                // La navegación ya está en otro LaunchedEffect
+                Toast.makeText(context, "Login exitoso", Toast.LENGTH_SHORT).show()
             }
+
             else -> {}
         }
     }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { /* ... */ },
-        floatingActionButtonPosition = androidx.compose.material3.FabPosition.End
-    ) { innerPadding ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        LoginColors.background,
+                        LoginColors.background.copy(alpha = 0.95f)
+                    )
+                )
+            )
+    ) {
         LoginBody(loginViewModel, navController)
         // AlertDialog para verificación automática
         if (loginUiState.result is LoginResultState.Loading && loginUiState.rememberMe) {
             AutoLoginDialog()
         }
     }
+
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -94,6 +104,9 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
     val screenWidth = configuration.screenWidthDp
+
+    // Lógica para habilitar controles solo cuando no está cargando
+    val controlsEnabled = loginUiState.result !is LoginResultState.Loading
 
     // Load saved credentials on first launch
     LaunchedEffect(Unit) {
@@ -143,7 +156,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = horizontalPadding, vertical = 10.dp)
+            .padding(horizontal = horizontalPadding)
             .imePadding()
             .windowInsetsPadding(WindowInsets.systemBars),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -160,7 +173,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                 )
             ) { AppLogo() }
         }
-        
+
         item {
             AnimatedVisibility(
                 visible = animationStep >= 2,
@@ -172,7 +185,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                 )
             ) { AppTitle() }
         }
-        
+
         item {
             AnimatedVisibility(
                 visible = animationStep >= 3,
@@ -192,18 +205,18 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                         loginUiState.username,
                         onValueChange = viewModel::onUsernameChange,
                         error = loginUiState.usernameError,
-                        enabled = loginUiState.result !is LoginResultState.Loading
+                        enabled = controlsEnabled
                     )
                     PasswordInput(
                         loginUiState.password,
                         onValueChange = viewModel::onPasswordChange,
                         error = loginUiState.passwordError,
-                        enabled = loginUiState.result !is LoginResultState.Loading
+                        enabled = controlsEnabled
                     )
                 }
             }
         }
-        
+
         item {
             AnimatedVisibility(
                 visible = animationStep >= 4,
@@ -216,12 +229,12 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
             ) {
                 RememberMeRow(
                     checked = loginUiState.rememberMe,
-                    enabled = loginUiState.rememberMeEnabled,
+                    enabled = controlsEnabled,
                     onCheckedChange = viewModel::onRememberMeChange
                 )
             }
         }
-        
+
         item {
             AnimatedVisibility(
                 visible = animationStep >= 5,
@@ -233,13 +246,13 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                 )
             ) {
                 LoginButtons(
-                    viewModel = viewModel, 
+                    viewModel = viewModel,
                     navController = navController,
-                    enabled = loginUiState.rememberMeEnabled || !loginUiState.hasSavedCredentials
+                    enabled = controlsEnabled
                 )
             }
         }
-        
+
         item {
             AnimatedVisibility(
                 visible = animationStep >= 6,
@@ -253,20 +266,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                 AppAuthor()
             }
         }
-        
-        item {
-            AnimatedVisibility(
-                visible = animationStep >= 6,
-                enter = fadeIn(
-                    animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
-                ) + slideInVertically(
-                    initialOffsetY = { 30 },
-                    animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
-                )
-            ) {
-                ClearDataButton(viewModel)
-            }
-        }
+
 
     }
 }
@@ -352,7 +352,12 @@ fun AppTitle() {
 }
 
 @Composable
-fun UsernameInput(value: String, onValueChange: (String) -> Unit, error: String? = null, enabled: Boolean = true) {
+fun UsernameInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    error: String? = null,
+    enabled: Boolean = true
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         LoginTextField(
             value = value,
@@ -381,7 +386,12 @@ fun UsernameInput(value: String, onValueChange: (String) -> Unit, error: String?
 }
 
 @Composable
-fun PasswordInput(value: String, onValueChange: (String) -> Unit, error: String? = null, enabled: Boolean = true) {
+fun PasswordInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    error: String? = null,
+    enabled: Boolean = true
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         LoginTextField(
             value = value,
@@ -569,7 +579,11 @@ fun LoginActionButton(
 }
 
 @Composable
-fun LoginButtons(viewModel: LoginViewModel = hiltViewModel(), navController: NavController, enabled: Boolean = true) {
+fun LoginButtons(
+    viewModel: LoginViewModel = hiltViewModel(),
+    navController: NavController,
+    enabled: Boolean = true
+) {
     val loginUiState by viewModel.loginUiState.collectAsState()
 
     Column(
@@ -617,7 +631,7 @@ fun AutoLoginDialog() {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
     val screenWidth = configuration.screenWidthDp
-    
+
     // Responsive sizing
     val cardPadding = when {
         screenWidth < 320 -> 16.dp  // Very small screens
@@ -625,40 +639,40 @@ fun AutoLoginDialog() {
         screenWidth > 720 -> 32.dp  // Large screens (tablets)
         else -> 24.dp               // Default
     }
-    
+
     val contentPadding = when {
         screenWidth < 320 -> 20.dp  // Very small screens
         screenWidth < 480 -> 24.dp  // Small screens
         screenWidth > 720 -> 40.dp  // Large screens (tablets)
         else -> 32.dp               // Default
     }
-    
+
     val progressSize = when {
         screenHeight < 600 -> 40.dp  // Small screens
         screenHeight < 800 -> 48.dp  // Medium screens
         screenWidth > 720 -> 56.dp   // Large screens (tablets)
         else -> 48.dp                // Default
     }
-    
+
     val strokeWidth = when {
         screenWidth > 720 -> 5.dp    // Large screens
         else -> 4.dp                 // Default
     }
-    
+
     val fontSize = when {
         screenHeight < 600 -> 18.sp   // Small screens
         screenHeight < 800 -> 22.sp   // Medium screens
         screenWidth > 720 -> 26.sp    // Large screens (tablets)
         else -> 22.sp                 // Default
     }
-    
+
     val spacing = when {
         screenHeight < 600 -> 16.dp   // Small screens
         screenHeight < 800 -> 20.dp   // Medium screens
         screenWidth > 720 -> 28.dp    // Large screens (tablets)
         else -> 24.dp                 // Default
     }
-    
+
     Dialog(
         onDismissRequest = { },
         properties = DialogProperties(
@@ -706,7 +720,7 @@ fun AutoLoginDialog() {
                         strokeWidth = strokeWidth
                     )
                 }
-                
+
                 // Texto de verificación con sombra
                 Text(
                     text = "Verificando credenciales",
@@ -727,18 +741,3 @@ fun AutoLoginDialog() {
     }
 }
 
-@Composable
-fun ClearDataButton(viewModel: LoginViewModel) {
-    TextButton(
-        onClick = { viewModel.clearAllData() },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "Limpiar datos de la app",
-            style = MaterialTheme.typography.bodySmall.copy(
-                color = LoginColors.link,
-                fontWeight = FontWeight.Medium
-            )
-        )
-    }
-}

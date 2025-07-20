@@ -68,8 +68,6 @@ class LoginViewModel @Inject constructor(
 
                 _loginUiState.value = _loginUiState.value.copy(
                     rememberMe = hasValidCredentials,
-                    rememberMeEnabled = !hasValidCredentials,
-                    hasSavedCredentials = hasValidCredentials,
                     username = if (hasValidCredentials) savedUsername else "",
                     password = if (hasValidCredentials) savedPassword else ""
                 )
@@ -123,25 +121,6 @@ class LoginViewModel @Inject constructor(
                 _loginUiState.value = _loginUiState.value.copy(
                     result = LoginResultState.Idle
                 )
-            }
-        }
-    }
-
-    fun clearAllData() {
-        viewModelScope.launch {
-            try {
-                // Limpiar credenciales guardadas
-                userPreferences.clearCredentials()
-                
-                // Limpiar base de datos (eliminar admin)
-                adminUseCase.deleteAllAdmins()
-                
-                // Resetear estado
-                _loginUiState.value = LoginUiState()
-                
-                Log.d("LoginViewModel", "All data cleared successfully")
-            } catch (e: Exception) {
-                Log.e("LoginViewModel", "Error clearing data", e)
             }
         }
     }
@@ -200,8 +179,7 @@ class LoginViewModel @Inject constructor(
                     _loginUiState.value = _loginUiState.value.copy(
                         usernameError = null,
                         passwordError = null,
-                        result = LoginResultState.Success,
-                        rememberMeEnabled = false
+                        result = LoginResultState.Success
                     )
                     
                     // Guardar credenciales si Remember Me está activado
