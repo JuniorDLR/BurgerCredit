@@ -25,6 +25,7 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.theburgerclub.burgercredit.domain.model.Customer
 import androidx.compose.ui.platform.LocalConfiguration
+import com.theburgerclub.burgercredit.presentation.shared.SharedOutlinedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,41 +92,27 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                     .padding(horizontal = horizontalPadding, vertical = verticalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                OutlinedTextField(
+                SharedOutlinedTextField(
                     value = uiState.customerInput,
                     onValueChange = { viewModel.onCustomerInputChange(it) },
-                    label = { Text("Name", fontSize = fontSize) },
-                    placeholder = { Text("Enter customer name", fontSize = fontSize) },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
+                    label = "Name",
+                    placeholder = "Enter customer name",
                     isError = uiState.customerInputError != null,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = LoginColors.inputBackground,
-                        focusedContainerColor = LoginColors.inputBackground,
-                        disabledContainerColor = LoginColors.inputBackground,
-                        unfocusedBorderColor = if (uiState.customerInputError != null) Color.Red else Color.Transparent,
-                        focusedBorderColor = if (uiState.customerInputError != null) Color.Red else LoginColors.inputIcon,
-                        disabledBorderColor = Color.Transparent,
-                        cursorColor = LoginColors.dark,
-                        focusedTextColor = LoginColors.dark,
-                        unfocusedTextColor = LoginColors.dark,
-                        disabledTextColor = LoginColors.inputIcon,
-                        focusedPlaceholderColor = LoginColors.inputIcon,
-                        unfocusedPlaceholderColor = LoginColors.inputIcon,
-                        disabledPlaceholderColor = LoginColors.inputIcon
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = textFieldMinHeight)
+                    errorMessage = uiState.customerInputError,
+                    fontSize = fontSize,
+                    minHeight = textFieldMinHeight
                 )
-                if (uiState.customerInputError != null) {
-                    Text(
-                        text = uiState.customerInputError ?: "",
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+                SharedOutlinedTextField(
+                    value = uiState.lastNameInput,
+                    onValueChange = { viewModel.onLastNameInputChange(it) },
+                    label = "Last Name",
+                    placeholder = "Enter customer last name",
+                    isError = uiState.lastNameInputError != null,
+                    errorMessage = uiState.lastNameInputError,
+                    fontSize = fontSize,
+                    minHeight = textFieldMinHeight
+                )
                 Spacer(modifier = Modifier.height(betweenFieldsSpace))
                 Button(
                     onClick = {
@@ -140,7 +127,7 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(buttonHeight),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = "Save",

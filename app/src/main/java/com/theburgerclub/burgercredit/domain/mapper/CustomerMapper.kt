@@ -5,10 +5,12 @@ import com.theburgerclub.burgercredit.domain.model.Customer
 
 fun CustomerEntity.toDomain(): Customer = Customer(
     id = id,
-    name = name
+    name = name,
+    lastName = lastName
 )
 
 fun Customer.toEntity(): CustomerEntity = CustomerEntity(
     id = id,
-    name = name
+    name = name,
+    lastName = lastName
 ) 

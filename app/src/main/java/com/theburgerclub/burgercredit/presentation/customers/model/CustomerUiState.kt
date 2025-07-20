@@ -6,5 +6,7 @@ data class CustomerUiState(
     val customers: List<Customer> = emptyList(),
     val selectedCustomer: Customer? = null,
     val customerInput: String = "",
-    val customerInputError: String? = null
+    val lastNameInput: String = "",
+    val customerInputError: String? = null,
+    val lastNameInputError: String? = null
 ) 

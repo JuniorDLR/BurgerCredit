@@ -55,6 +55,7 @@ import com.theburgerclub.burgercredit.domain.model.Customer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
+import com.theburgerclub.burgercredit.presentation.customers.model.getFullName
 
 
 @Composable
@@ -111,9 +112,11 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
     val clients = uiState.customers.map {
         Client(
             name = it.name,
+            lastName = it.lastName,
             icon = Icons.Default.Person
         )
     }
+
     fun getCustomerByName(name: String): Customer? = uiState.customers.find { it.name == name }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -121,7 +124,13 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
             OutlinedTextField(
                 value = "",
                 onValueChange = { },
-                placeholder = { Text("Search clients", color = Color(0xFFB0B0B0), fontSize = fontSize) },
+                placeholder = {
+                    Text(
+                        "Search clients",
+                        color = Color(0xFFB0B0B0),
+                        fontSize = fontSize
+                    )
+                },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,18 +147,22 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
             )
             Text(
                 text = "Existing Clients",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = fontSize),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = fontSize
+                ),
                 modifier = Modifier.padding(vertical = verticalPadding)
             )
         }
         ClientList(
             clients = clients,
-            onEdit = {  },
+            onEdit = { },
             onDelete = { client ->
                 val customer = getCustomerByName(client.name)
                 if (customer != null) {
                     viewModel.deleteCustomer(customer)
-                    Toast.makeText(context, "Customer deleted successfully!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Customer deleted successfully!", Toast.LENGTH_SHORT)
+                        .show()
                 }
             },
             cardHeight = cardHeight,
@@ -191,7 +204,10 @@ fun ClientCard(
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = name,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, fontSize = fontSize)
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.Medium,
+                fontSize = fontSize
+            )
         )
     }
 }
@@ -214,7 +230,11 @@ fun SwipeableClientCard(
     var isRevealed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    Box(modifier = Modifier.fillMaxWidth().height(cardHeight)) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(cardHeight)
+    ) {
         // Fondo de acciones SOLO del ancho de los botones
         Row(
             modifier = Modifier
@@ -225,7 +245,9 @@ fun SwipeableClientCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             ActionSquareButton(
-                modifier = Modifier.width(80.dp).fillMaxHeight(),
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
                 icon = Icons.Default.Edit,
                 label = "Editar",
                 backgroundColor = Color(0xFFA5D6A7),
@@ -238,7 +260,9 @@ fun SwipeableClientCard(
                 }
             )
             ActionSquareButton(
-                modifier = Modifier.width(80.dp).fillMaxHeight(),
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
                 icon = Icons.Default.Delete,
                 label = "Eliminar",
                 backgroundColor = Color(0xFFE57373),
@@ -355,7 +379,7 @@ fun ClientsLazyList(
         items(clients) { client ->
             Column(modifier = Modifier.fillMaxWidth()) {
                 SwipeableClientCard(
-                    name = client.name,
+                    name = client.getFullName(),
                     icon = client.icon,
                     onEdit = { onEdit(client) },
                     onDelete = { onDelete(client) },

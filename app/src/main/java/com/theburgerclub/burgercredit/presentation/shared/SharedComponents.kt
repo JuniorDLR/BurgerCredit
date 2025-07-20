@@ -37,12 +37,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.navigation.NavController
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
+import com.theburgerclub.burgercredit.presentation.theme.LoginColors
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,6 +181,57 @@ fun ActionSquareButton(
                 text = label,
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+@Composable
+fun SharedOutlinedTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    isError: Boolean = false,
+    errorMessage: String? = null,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 16.sp,
+    minHeight: Dp = 60.dp
+) {
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label, fontSize = fontSize) },
+            placeholder = { Text(placeholder, fontSize = fontSize) },
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+            isError = isError,
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = LoginColors.inputBackground,
+                focusedContainerColor = LoginColors.inputBackground,
+                disabledContainerColor = LoginColors.inputBackground,
+                unfocusedBorderColor = if (isError) Color.Red else Color.Transparent,
+                focusedBorderColor = if (isError) Color.Red else LoginColors.inputIcon,
+                disabledBorderColor = Color.Transparent,
+                cursorColor = LoginColors.dark,
+                focusedTextColor = LoginColors.dark,
+                unfocusedTextColor = LoginColors.dark,
+                disabledTextColor = LoginColors.inputIcon,
+                focusedPlaceholderColor = LoginColors.inputIcon,
+                unfocusedPlaceholderColor = LoginColors.inputIcon,
+                disabledPlaceholderColor = LoginColors.inputIcon
+            ),
+            modifier = modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = minHeight)
+        )
+        if (isError && errorMessage != null) {
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
             )
         }
     }
