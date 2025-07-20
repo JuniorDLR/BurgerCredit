@@ -48,6 +48,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 
 
 @Composable
@@ -56,21 +58,27 @@ fun LoginScreen(
     loginViewModel: LoginViewModel = hiltViewModel()
 ) {
     val loginUiState by loginViewModel.loginUiState.collectAsState()
-    
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        LoginColors.background,
-                        LoginColors.background.copy(alpha = 0.95f)
-                    )
-                )
-            )
-    ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(loginUiState.result) {
+        when (val result = loginUiState.result) {
+            is LoginResultState.Error -> {
+                snackbarHostState.showSnackbar(result.message)
+            }
+            is LoginResultState.Success -> {
+                snackbarHostState.showSnackbar("Login exitoso")
+                // La navegación ya está en otro LaunchedEffect
+            }
+            else -> {}
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = { /* ... */ },
+        floatingActionButtonPosition = androidx.compose.material3.FabPosition.End
+    ) { innerPadding ->
         LoginBody(loginViewModel, navController)
-        
         // AlertDialog para verificación automática
         if (loginUiState.result is LoginResultState.Loading && loginUiState.rememberMe) {
             AutoLoginDialog()
@@ -184,13 +192,13 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                         loginUiState.username,
                         onValueChange = viewModel::onUsernameChange,
                         error = loginUiState.usernameError,
-                        enabled = !loginUiState.rememberMe || loginUiState.result is LoginResultState.Loading
+                        enabled = loginUiState.result !is LoginResultState.Loading
                     )
                     PasswordInput(
                         loginUiState.password,
                         onValueChange = viewModel::onPasswordChange,
                         error = loginUiState.passwordError,
-                        enabled = !loginUiState.rememberMe || loginUiState.result is LoginResultState.Loading
+                        enabled = loginUiState.result !is LoginResultState.Loading
                     )
                 }
             }
@@ -227,7 +235,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                 LoginButtons(
                     viewModel = viewModel, 
                     navController = navController,
-                    enabled = !loginUiState.rememberMe || loginUiState.result is LoginResultState.Loading
+                    enabled = loginUiState.rememberMeEnabled || !loginUiState.hasSavedCredentials
                 )
             }
         }
@@ -577,15 +585,17 @@ fun LoginButtons(viewModel: LoginViewModel = hiltViewModel(), navController: Nav
             showProgress = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
             enabled = enabled
         )
-        LoginActionButton(
-            text = "Sign Up",
-            onClick = { navController.navigate(AppRoute.RegisterScreen.route) },
-            containerColor = LoginColors.buttonSecondary,
-            textColor = LoginColors.buttonText,
-            isLoading = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
-            showProgress = false,
-            enabled = enabled
-        )
+        if (!loginUiState.adminExists) {
+            LoginActionButton(
+                text = "Sign Up",
+                onClick = { navController.navigate(AppRoute.RegisterScreen.route) },
+                containerColor = LoginColors.buttonSecondary,
+                textColor = LoginColors.buttonText,
+                isLoading = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
+                showProgress = false,
+                enabled = enabled
+            )
+        }
     }
 }
 

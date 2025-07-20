@@ -8,5 +8,6 @@ data class AdminEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val username: String,
-    val password: String
+    val password: String,
+    val rememberMe: Boolean = false
 ) 

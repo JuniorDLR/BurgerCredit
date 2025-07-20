@@ -5,6 +5,8 @@ data class LoginUiState(
     val password: String = "",
     val rememberMe: Boolean = false,
     val rememberMeEnabled: Boolean = true,
+    val hasSavedCredentials: Boolean = false,
+    val adminExists: Boolean = false,
     val usernameError: String? = null,
     val passwordError: String? = null,
     val result: LoginResultState = LoginResultState.Idle

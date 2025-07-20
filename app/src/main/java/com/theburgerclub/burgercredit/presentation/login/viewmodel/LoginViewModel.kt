@@ -24,6 +24,20 @@ class LoginViewModel @Inject constructor(
     private val _loginUiState = MutableStateFlow(LoginUiState())
     val loginUiState: StateFlow<LoginUiState> = _loginUiState.asStateFlow()
 
+
+
+    init {
+        loadSavedCredentials()
+        checkAdminExists()
+    }
+
+    fun checkAdminExists() {
+        viewModelScope.launch {
+            val exists = adminUseCase.getAdmin() != null
+            _loginUiState.value = _loginUiState.value.copy(adminExists = exists)
+        }
+    }
+
     fun onUsernameChange(username: String) {
         _loginUiState.value = _loginUiState.value.copy(
             username = username,
@@ -48,16 +62,18 @@ class LoginViewModel @Inject constructor(
                 val rememberMe = userPreferences.rememberMe.first()
                 val savedUsername = userPreferences.savedUsername.first()
                 val savedPassword = userPreferences.savedPassword.first()
-                
+
                 // Solo marcar Remember Me si hay credenciales válidas guardadas
                 val hasValidCredentials = rememberMe && savedUsername.isNotEmpty() && savedPassword.isNotEmpty()
-                
+
                 _loginUiState.value = _loginUiState.value.copy(
                     rememberMe = hasValidCredentials,
+                    rememberMeEnabled = !hasValidCredentials,
+                    hasSavedCredentials = hasValidCredentials,
                     username = if (hasValidCredentials) savedUsername else "",
                     password = if (hasValidCredentials) savedPassword else ""
                 )
-                
+                checkAdminExists()
                 // Si hay credenciales guardadas, verificar automáticamente
                 if (hasValidCredentials) {
                     verifySavedCredentials(savedUsername, savedPassword)
@@ -185,8 +201,7 @@ class LoginViewModel @Inject constructor(
                         usernameError = null,
                         passwordError = null,
                         result = LoginResultState.Success,
-                        rememberMe = true, // Mantener marcado si estaba activado
-                        rememberMeEnabled = false // Deshabilitar después del login exitoso
+                        rememberMeEnabled = false
                     )
                     
                     // Guardar credenciales si Remember Me está activado
