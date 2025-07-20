@@ -49,6 +49,9 @@ class LoginViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
+                // Pequeño delay para mostrar el loading
+                delay(2000)
+                
                 // Validar campos
                 var hasErrors = false
                 var usernameError: String? = null

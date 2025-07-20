@@ -4,6 +4,8 @@ package com.theburgerclub.burgercredit.presentation.login.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyColumn
+
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -30,6 +33,9 @@ import com.theburgerclub.burgercredit.presentation.login.model.SignUpResultState
 import com.theburgerclub.burgercredit.presentation.login.viewmodel.SignUpViewModel
 import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 import com.theburgerclub.burgercredit.presentation.theme.LoginColors
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 
 @Composable
@@ -66,7 +72,8 @@ fun SignUpScreen(
             onUsernameChange = viewModel::onUsernameChange,
             onPasswordChange = viewModel::onPasswordChange,
             onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
-            viewModel = viewModel)
+            viewModel = viewModel
+        )
 
     }
 }
@@ -105,6 +112,7 @@ fun SignUpTopAppBar(onBack: () -> Unit) {
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SignUpContent(
     modifier: Modifier = Modifier,
@@ -115,107 +123,216 @@ fun SignUpContent(
     onConfirmPasswordChange: (String) -> Unit,
     viewModel: SignUpViewModel
 ) {
-    Column(
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+    val screenWidth = configuration.screenWidthDp
+
+    // Responsive spacing based on screen size
+    val spacing = when {
+        screenHeight < 600 -> 12.dp  // Small screens
+        screenHeight < 800 -> 16.dp  // Medium screens
+        else -> 20.dp                // Large screens
+    }
+
+    // Responsive horizontal padding
+    val horizontalPadding = when {
+        screenWidth < 320 -> 16.dp   // Very small screens
+        screenWidth < 480 -> 20.dp   // Small screens
+        screenWidth < 720 -> 24.dp   // Medium screens
+        else -> 32.dp                // Large screens
+    }
+
+    // Check if device is in landscape mode
+    val isLandscape = screenWidth > screenHeight
+
+    val imeInsets = WindowInsets.ime.asPaddingValues()
+    val keyboardHeight = imeInsets.calculateBottomPadding()
+
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Welcome Header
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Logo Container
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(
-                        color = LoginColors.logoBackground,
-                        shape = RoundedCornerShape(20.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "🍔",
-                    fontSize = 40.sp,
-                    color = Color.White
-                )
+            .padding(horizontal = horizontalPadding, vertical = 10.dp)
+            .windowInsetsPadding(WindowInsets.systemBars),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(spacing, Alignment.Top),
+        contentPadding = PaddingValues(
+            bottom = if (isLandscape) {
+                if (keyboardHeight > 0.dp) 300.dp else 200.dp
+            } else {
+                if (keyboardHeight > 0.dp) 150.dp else 100.dp
             }
+        )
+    ) {
+        item {
+            SignUpWelcomeHeader()
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "BurgerCredit Admin",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = LoginColors.logoBackground,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Create admin account to manage the system",
-                fontSize = 14.sp,
-                color = LoginColors.inputIcon,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
+        item {
+            // Username Field
+            SignUpTextField(
+                value = signUpState.username,
+                onValueChange = onUsernameChange,
+                label = "Username",
+                placeholder = "Username",
+                leadingIcon = Icons.Default.Person,
+                error = signUpState.usernameError
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        item {
+            // Password Field
+            SignUpTextField(
+                value = signUpState.password,
+                onValueChange = onPasswordChange,
+                label = "Password",
+                placeholder = "Password",
+                leadingIcon = Icons.Default.Lock,
+                isPassword = true,
+                error = signUpState.passwordError
+            )
+        }
 
-        // Username Field
-        SignUpTextField(
-            value = signUpState.username,
-            onValueChange = onUsernameChange,
-            label = "Username",
-            placeholder = "Username",
-            leadingIcon = Icons.Default.Person,
-            error = signUpState.usernameError
+        item {
+            // Confirm Password Field
+            SignUpTextField(
+                value = signUpState.confirmPassword,
+                onValueChange = onConfirmPasswordChange,
+                label = "Confirm Password",
+                placeholder = "Confirm Password",
+                leadingIcon = Icons.Default.Lock,
+                isPassword = true,
+                error = signUpState.confirmPasswordError
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        item {
+            // Sign Up Button
+            SignUpButton(
+                text = if (signUpState.result is SignUpResultState.Loading) "" else "Sign Up",
+                onClick = viewModel::onSignUp,
+                containerColor = LoginColors.buttonPrimary,
+                textColor = LoginColors.buttonText,
+                isLoading = signUpState.result is SignUpResultState.Loading
+            )
+        }
+
+
+        item {
+            // Login Link
+            SignUpLoginLink(viewModel = viewModel, navController = navController)
+        }
+
+        item {
+            Spacer(
+                modifier = Modifier.height(
+                    if (isLandscape) {
+                        if (keyboardHeight > 0.dp) 250.dp else 150.dp
+                    } else {
+                        if (keyboardHeight > 0.dp) 100.dp else 20.dp
+                    }
+                )
+            )
+        }
+
+    }
+}
+
+@Composable
+fun SignUpWelcomeHeader() {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp
+    val screenHeight = configuration.screenHeightDp
+    val isLandscape = screenWidth > screenHeight
+    val imeInsets = WindowInsets.ime.asPaddingValues()
+    val keyboardHeight = imeInsets.calculateBottomPadding()
+    val isKeyboardVisible = keyboardHeight > 0.dp
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Logo Container - smaller in landscape and when keyboard is visible
+        Box(
+            modifier = Modifier
+                .size(
+                    when {
+                        isLandscape && isKeyboardVisible -> 40.dp
+                        isLandscape -> 60.dp
+                        isKeyboardVisible -> 60.dp
+                        else -> 80.dp
+                    }
+                )
+                .background(
+                    color = LoginColors.logoBackground,
+                    shape = RoundedCornerShape(20.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "🍔",
+                fontSize = when {
+                    isLandscape && isKeyboardVisible -> 20.sp
+                    isLandscape -> 30.sp
+                    isKeyboardVisible -> 30.sp
+                    else -> 40.sp
+                },
+                color = Color.White
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(
+                when {
+                    isLandscape && isKeyboardVisible -> 4.dp
+                    isLandscape -> 8.dp
+                    isKeyboardVisible -> 8.dp
+                    else -> 16.dp
+                }
+            )
         )
 
-        // Password Field
-        SignUpTextField(
-            value = signUpState.password,
-            onValueChange = onPasswordChange,
-            label = "Password",
-            placeholder = "Password",
-            leadingIcon = Icons.Default.Lock,
-            isPassword = true,
-            error = signUpState.passwordError
+        Text(
+            text = "BurgerCredit Admin",
+            fontSize = when {
+                isLandscape && isKeyboardVisible -> 16.sp
+                isLandscape -> 20.sp
+                isKeyboardVisible -> 20.sp
+                else -> 24.sp
+            },
+            fontWeight = FontWeight.Bold,
+            color = LoginColors.logoBackground,
+            textAlign = TextAlign.Center
         )
 
-        // Confirm Password Field
-        SignUpTextField(
-            value = signUpState.confirmPassword,
-            onValueChange = onConfirmPasswordChange,
-            label = "Confirm Password",
-            placeholder = "Confirm Password",
-            leadingIcon = Icons.Default.Lock,
-            isPassword = true,
-            error = signUpState.confirmPasswordError
+        Spacer(
+            modifier = Modifier.height(
+                when {
+                    isLandscape && isKeyboardVisible -> 2.dp
+                    isLandscape -> 4.dp
+                    isKeyboardVisible -> 4.dp
+                    else -> 8.dp
+                }
+            )
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Sign Up Button
-        SignUpButton(
-            text = if (signUpState.result is SignUpResultState.Loading) "" else "Sign Up",
-            onClick = viewModel::onSignUp,
-            containerColor = LoginColors.buttonPrimary,
-            textColor = LoginColors.buttonText,
-            isLoading = signUpState.result is SignUpResultState.Loading
+        Text(
+            text = "Create admin account to manage the system",
+            fontSize = when {
+                isLandscape && isKeyboardVisible -> 10.sp
+                isLandscape -> 12.sp
+                isKeyboardVisible -> 12.sp
+                else -> 14.sp
+            },
+            color = LoginColors.inputIcon,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Login Link
-        SignUpLoginLink(viewModel=viewModel,navController = navController)
     }
 }
 
@@ -229,13 +346,13 @@ fun SignUpTextField(
     isPassword: Boolean = false,
     error: String? = null
 ) {
+
     Column(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth()
+            ,
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = LoginColors.inputBackground,

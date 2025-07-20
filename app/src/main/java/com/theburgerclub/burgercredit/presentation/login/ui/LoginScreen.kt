@@ -2,9 +2,8 @@ package com.theburgerclub.burgercredit.presentation.login.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -13,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -30,6 +28,8 @@ import com.theburgerclub.burgercredit.presentation.theme.LoginColors
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -38,6 +38,11 @@ import com.theburgerclub.burgercredit.presentation.login.viewmodel.LoginViewMode
 import kotlinx.coroutines.delay
 import com.theburgerclub.burgercredit.presentation.login.model.LoginResultState
 import com.theburgerclub.burgercredit.presentation.routes.AppRoute
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.ui.platform.LocalConfiguration
 
 
 @Composable
@@ -61,88 +66,194 @@ fun LoginScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavController) {
     val loginUiState by viewModel.loginUiState.collectAsState()
     var animationStep by remember { mutableIntStateOf(0) }
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+    val screenWidth = configuration.screenWidthDp
 
     LaunchedEffect(Unit) {
-        repeat(6) { step ->
-            delay(120)
-            animationStep = step + 1
-        }
+        // Smooth staggered animation without fixed delays
+        animationStep = 1
+        delay(80)
+        animationStep = 2
+        delay(120)
+        animationStep = 3
+        delay(160)
+        animationStep = 4
+        delay(200)
+        animationStep = 5
+        delay(240)
+        animationStep = 6
     }
 
-    Column(
+    // Responsive spacing based on screen size
+    val spacing = when {
+        screenHeight < 600 -> 16.dp  // Small screens
+        screenHeight < 800 -> 20.dp  // Medium screens
+        else -> 22.dp                // Large screens
+    }
+
+    // Responsive horizontal padding
+    val horizontalPadding = when {
+        screenWidth < 320 -> 16.dp   // Very small screens
+        screenWidth < 480 -> 20.dp   // Small screens
+        screenWidth < 720 -> 24.dp   // Medium screens
+        else -> 32.dp                // Large screens
+    }
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = horizontalPadding, vertical = 10.dp)
+            .imePadding()
+            .windowInsetsPadding(WindowInsets.systemBars),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(22.dp, Alignment.Top)
+        verticalArrangement = Arrangement.spacedBy(spacing, Alignment.Top)
     ) {
-        AnimatedVisibility(
-            visible = animationStep >= 1,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -60 })
-        ) { AppLogo() }
-        AnimatedVisibility(
-            visible = animationStep >= 2,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
-        ) { AppTitle() }
-        AnimatedVisibility(
-            visible = animationStep >= 3,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+        item {
+            AnimatedVisibility(
+                visible = animationStep >= 1,
+                enter = fadeIn(
+                    animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                ) + slideInVertically(
+                    initialOffsetY = { -20 },
+                    animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                )
+            ) { AppLogo() }
+        }
+        
+        item {
+            AnimatedVisibility(
+                visible = animationStep >= 2,
+                enter = fadeIn(
+                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                ) + slideInVertically(
+                    initialOffsetY = { -15 },
+                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                )
+            ) { AppTitle() }
+        }
+        
+        item {
+            AnimatedVisibility(
+                visible = animationStep >= 3,
+                enter = fadeIn(
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                ) + slideInVertically(
+                    initialOffsetY = { 20 },
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                )
             ) {
-                UsernameInput(
-                    loginUiState.username,
-                    onValueChange = viewModel::onUsernameChange,
-                    error = loginUiState.usernameError
-                )
-                PasswordInput(
-                    loginUiState.password,
-                    onValueChange = viewModel::onPasswordChange,
-                    error = loginUiState.passwordError
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    UsernameInput(
+                        loginUiState.username,
+                        onValueChange = viewModel::onUsernameChange,
+                        error = loginUiState.usernameError
+                    )
+                    PasswordInput(
+                        loginUiState.password,
+                        onValueChange = viewModel::onPasswordChange,
+                        error = loginUiState.passwordError
+                    )
+                }
             }
         }
-        AnimatedVisibility(
-            visible = animationStep >= 4,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
-        ) {
-            RememberMeRow(loginUiState.rememberMe, onCheckedChange = viewModel::onRememberMeChange)
+        
+        item {
+            AnimatedVisibility(
+                visible = animationStep >= 4,
+                enter = fadeIn(
+                    animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+                ) + slideInVertically(
+                    initialOffsetY = { 15 },
+                    animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+                )
+            ) {
+                RememberMeRow(loginUiState.rememberMe, onCheckedChange = viewModel::onRememberMeChange)
+            }
         }
-        AnimatedVisibility(
-            visible = animationStep >= 5,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { 60 })
-        ) {
-            LoginButtons(viewModel, navController)
+        
+        item {
+            AnimatedVisibility(
+                visible = animationStep >= 5,
+                enter = fadeIn(
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                ) + slideInVertically(
+                    initialOffsetY = { 25 },
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                )
+            ) {
+                LoginButtons(viewModel, navController)
+            }
         }
-        AnimatedVisibility(
-            visible = animationStep >= 6,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { 80 })
-        ) {
-            AppAuthor()
+        
+        item {
+            AnimatedVisibility(
+                visible = animationStep >= 6,
+                enter = fadeIn(
+                    animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                ) + slideInVertically(
+                    initialOffsetY = { 30 },
+                    animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                )
+            ) {
+                AppAuthor()
+            }
         }
+
     }
 }
 
 @Composable
 fun AppLogo() {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+    val screenWidth = configuration.screenWidthDp
 
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Logo BurgerCredit",
-            modifier = Modifier.size(250.dp)
-        )
+    // Responsive logo size
+    val logoSize = when {
+        screenHeight < 600 -> 180.dp  // Small screens
+        screenHeight < 800 -> 220.dp  // Medium screens
+        screenWidth > 720 -> 280.dp   // Large screens (tablets)
+        else -> 250.dp                // Default
+    }
 
+    Image(
+        painter = painterResource(id = R.drawable.logo),
+        contentDescription = "Logo BurgerCredit",
+        modifier = Modifier.size(logoSize)
+    )
 }
 
 @Composable
 fun AppTitle() {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+    val screenWidth = configuration.screenWidthDp
+
+    // Responsive font size
+    val fontSize = when {
+        screenHeight < 600 -> 24.sp   // Small screens
+        screenHeight < 800 -> 28.sp   // Medium screens
+        screenWidth > 720 -> 36.sp    // Large screens (tablets)
+        else -> 30.sp                 // Default
+    }
+
+    // Responsive letter spacing
+    val letterSpacing = when {
+        screenWidth < 320 -> 1.sp     // Very small screens
+        screenWidth < 480 -> 1.5.sp   // Small screens
+        else -> 2.sp                  // Default
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -154,8 +265,8 @@ fun AppTitle() {
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.ExtraBold,
                 color = LoginColors.buttonText,
-                fontSize = 30.sp,
-                letterSpacing = 2.sp,
+                fontSize = fontSize,
+                letterSpacing = letterSpacing,
                 shadow = Shadow(
                     color = Color.Black.copy(alpha = 0.15f),
                     offset = Offset(2f, 2f),
@@ -169,8 +280,8 @@ fun AppTitle() {
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.ExtraBold,
                 color = LoginColors.logoBackground,
-                fontSize = 30.sp,
-                letterSpacing = 2.sp,
+                fontSize = fontSize,
+                letterSpacing = letterSpacing,
                 shadow = Shadow(
                     color = Color.Black.copy(alpha = 0.15f),
                     offset = Offset(2f, 2f),
@@ -289,6 +400,16 @@ fun LoginTextField(
     isPassword: Boolean = false,
     hasError: Boolean = false
 ) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+
+    // Responsive field height
+    val fieldHeight = when {
+        screenHeight < 600 -> 48.dp  // Small screens
+        screenHeight < 800 -> 52.dp  // Medium screens
+        else -> 56.dp                // Large screens
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = label,
@@ -303,7 +424,7 @@ fun LoginTextField(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(fieldHeight),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = LoginColors.inputBackground,
@@ -339,11 +460,21 @@ fun LoginActionButton(
     isLoading: Boolean = false,
     showProgress: Boolean = false
 ) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+
+    // Responsive button height
+    val buttonHeight = when {
+        screenHeight < 600 -> 44.dp  // Small screens
+        screenHeight < 800 -> 46.dp  // Medium screens
+        else -> 48.dp                // Large screens
+    }
+
     OutlinedButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp),
+            .height(buttonHeight),
         shape = RoundedCornerShape(24.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = containerColor,
