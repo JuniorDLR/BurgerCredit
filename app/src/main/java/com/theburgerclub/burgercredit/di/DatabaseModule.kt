@@ -7,6 +7,7 @@ import com.theburgerclub.burgercredit.data.local.dao.CustomerDao
 import com.theburgerclub.burgercredit.data.local.dao.DishDao
 import com.theburgerclub.burgercredit.data.local.dao.DebtDao
 import com.theburgerclub.burgercredit.data.local.dao.AdminDao
+import com.theburgerclub.burgercredit.data.local.UserPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,4 +39,8 @@ object DatabaseModule {
 
     @Provides
     fun provideAdminDao(db: AppDatabase): AdminDao = db.adminDao()
+
+    @Provides
+    @Singleton
+    fun provideUserPreferences(@ApplicationContext appContext: Context): UserPreferences = UserPreferences(appContext)
 } 

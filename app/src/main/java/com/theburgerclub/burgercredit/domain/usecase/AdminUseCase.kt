@@ -27,4 +27,8 @@ class AdminUseCase @Inject constructor(
     suspend fun updateAdmin(admin: Admin) {
         adminRepository.updateAdmin(admin)
     }
+    
+    suspend fun deleteAllAdmins() {
+        adminRepository.deleteAllAdmins()
+    }
 } 

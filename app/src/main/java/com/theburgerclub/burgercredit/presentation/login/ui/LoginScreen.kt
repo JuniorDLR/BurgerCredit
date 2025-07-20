@@ -4,10 +4,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +27,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.theburgerclub.burgercredit.presentation.theme.LoginColors
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -50,6 +55,8 @@ fun LoginScreen(
     navController: NavController,
     loginViewModel: LoginViewModel = hiltViewModel()
 ) {
+    val loginUiState by loginViewModel.loginUiState.collectAsState()
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -63,6 +70,11 @@ fun LoginScreen(
             )
     ) {
         LoginBody(loginViewModel, navController)
+        
+        // AlertDialog para verificación automática
+        if (loginUiState.result is LoginResultState.Loading && loginUiState.rememberMe) {
+            AutoLoginDialog()
+        }
     }
 }
 
@@ -74,6 +86,21 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
     val screenWidth = configuration.screenWidthDp
+
+    // Load saved credentials on first launch
+    LaunchedEffect(Unit) {
+        viewModel.loadSavedCredentials()
+    }
+
+    // Handle navigation after successful login
+    LaunchedEffect(loginUiState.result) {
+        if (loginUiState.result is LoginResultState.Success) {
+            delay(500) // Small delay to show success state
+            navController.navigate(AppRoute.HomeScreen.route) {
+                popUpTo(AppRoute.LoginScreen.route) { inclusive = true }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         // Smooth staggered animation without fixed delays
@@ -156,12 +183,14 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                     UsernameInput(
                         loginUiState.username,
                         onValueChange = viewModel::onUsernameChange,
-                        error = loginUiState.usernameError
+                        error = loginUiState.usernameError,
+                        enabled = !loginUiState.rememberMe || loginUiState.result is LoginResultState.Loading
                     )
                     PasswordInput(
                         loginUiState.password,
                         onValueChange = viewModel::onPasswordChange,
-                        error = loginUiState.passwordError
+                        error = loginUiState.passwordError,
+                        enabled = !loginUiState.rememberMe || loginUiState.result is LoginResultState.Loading
                     )
                 }
             }
@@ -177,7 +206,11 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                     animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
                 )
             ) {
-                RememberMeRow(loginUiState.rememberMe, onCheckedChange = viewModel::onRememberMeChange)
+                RememberMeRow(
+                    checked = loginUiState.rememberMe,
+                    enabled = loginUiState.rememberMeEnabled,
+                    onCheckedChange = viewModel::onRememberMeChange
+                )
             }
         }
         
@@ -191,7 +224,11 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                     animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
                 )
             ) {
-                LoginButtons(viewModel, navController)
+                LoginButtons(
+                    viewModel = viewModel, 
+                    navController = navController,
+                    enabled = !loginUiState.rememberMe || loginUiState.result is LoginResultState.Loading
+                )
             }
         }
         
@@ -206,6 +243,20 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                 )
             ) {
                 AppAuthor()
+            }
+        }
+        
+        item {
+            AnimatedVisibility(
+                visible = animationStep >= 6,
+                enter = fadeIn(
+                    animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                ) + slideInVertically(
+                    initialOffsetY = { 30 },
+                    animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                )
+            ) {
+                ClearDataButton(viewModel)
             }
         }
 
@@ -293,7 +344,7 @@ fun AppTitle() {
 }
 
 @Composable
-fun UsernameInput(value: String, onValueChange: (String) -> Unit, error: String? = null) {
+fun UsernameInput(value: String, onValueChange: (String) -> Unit, error: String? = null, enabled: Boolean = true) {
     Column(modifier = Modifier.fillMaxWidth()) {
         LoginTextField(
             value = value,
@@ -307,7 +358,8 @@ fun UsernameInput(value: String, onValueChange: (String) -> Unit, error: String?
                 )
             },
             isPassword = false,
-            hasError = error != null
+            hasError = error != null,
+            enabled = enabled
         )
         if (error != null) {
             Text(
@@ -321,7 +373,7 @@ fun UsernameInput(value: String, onValueChange: (String) -> Unit, error: String?
 }
 
 @Composable
-fun PasswordInput(value: String, onValueChange: (String) -> Unit, error: String? = null) {
+fun PasswordInput(value: String, onValueChange: (String) -> Unit, error: String? = null, enabled: Boolean = true) {
     Column(modifier = Modifier.fillMaxWidth()) {
         LoginTextField(
             value = value,
@@ -335,7 +387,8 @@ fun PasswordInput(value: String, onValueChange: (String) -> Unit, error: String?
                 )
             },
             isPassword = true,
-            hasError = error != null
+            hasError = error != null,
+            enabled = enabled
         )
         if (error != null) {
             Text(
@@ -349,7 +402,7 @@ fun PasswordInput(value: String, onValueChange: (String) -> Unit, error: String?
 }
 
 @Composable
-fun RememberMeRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun RememberMeRow(checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -359,16 +412,20 @@ fun RememberMeRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         Checkbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             colors = CheckboxDefaults.colors(
                 checkedColor = LoginColors.buttonPrimary,
                 uncheckedColor = LoginColors.inputIcon,
-                checkmarkColor = LoginColors.buttonText
+                checkmarkColor = LoginColors.buttonText,
+                disabledCheckedColor = LoginColors.buttonPrimary, // Siempre naranja si está marcado
+                disabledUncheckedColor = LoginColors.inputIcon,
+                disabledIndeterminateColor = LoginColors.inputIcon
             )
         )
         Text(
             text = "Remember me",
             style = MaterialTheme.typography.bodyMedium.copy(
-                color = LoginColors.dark,
+                color = if (enabled) LoginColors.dark else if (checked) LoginColors.buttonPrimary else LoginColors.inputIcon,
                 fontWeight = FontWeight.Medium
             ),
             modifier = Modifier.padding(start = 4.dp)
@@ -398,7 +455,8 @@ fun LoginTextField(
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     isPassword: Boolean = false,
-    hasError: Boolean = false
+    hasError: Boolean = false,
+    enabled: Boolean = true
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
@@ -426,6 +484,7 @@ fun LoginTextField(
                 .fillMaxWidth()
                 .height(fieldHeight),
             shape = RoundedCornerShape(12.dp),
+            enabled = enabled,
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = LoginColors.inputBackground,
                 focusedContainerColor = LoginColors.inputBackground,
@@ -458,7 +517,8 @@ fun LoginActionButton(
     textColor: Color,
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
-    showProgress: Boolean = false
+    showProgress: Boolean = false,
+    enabled: Boolean = true
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
@@ -481,7 +541,7 @@ fun LoginActionButton(
             contentColor = textColor
         ),
         border = null,
-        enabled = !isLoading
+        enabled = enabled && !isLoading
     ) {
         if (showProgress) {
             CircularProgressIndicator(
@@ -501,7 +561,7 @@ fun LoginActionButton(
 }
 
 @Composable
-fun LoginButtons(viewModel: LoginViewModel = hiltViewModel(), navController: NavController) {
+fun LoginButtons(viewModel: LoginViewModel = hiltViewModel(), navController: NavController, enabled: Boolean = true) {
     val loginUiState by viewModel.loginUiState.collectAsState()
 
     Column(
@@ -509,20 +569,22 @@ fun LoginButtons(viewModel: LoginViewModel = hiltViewModel(), navController: Nav
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         LoginActionButton(
-            text = if (loginUiState.result is LoginResultState.Loading) "" else "Login",
+            text = if (loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe) "" else "Login",
             onClick = { viewModel.onLogin() },
             containerColor = LoginColors.buttonPrimary,
             textColor = LoginColors.buttonText,
-            isLoading = loginUiState.result is LoginResultState.Loading,
-            showProgress = loginUiState.result is LoginResultState.Loading
+            isLoading = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
+            showProgress = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
+            enabled = enabled
         )
         LoginActionButton(
             text = "Sign Up",
             onClick = { navController.navigate(AppRoute.RegisterScreen.route) },
             containerColor = LoginColors.buttonSecondary,
             textColor = LoginColors.buttonText,
-            isLoading = loginUiState.result is LoginResultState.Loading,
-            showProgress = false
+            isLoading = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
+            showProgress = false,
+            enabled = enabled
         )
     }
 }
@@ -538,4 +600,135 @@ fun AppAuthor() {
         modifier = Modifier.fillMaxWidth(),
         textAlign = TextAlign.Center
     )
+}
+
+@Composable
+fun AutoLoginDialog() {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+    val screenWidth = configuration.screenWidthDp
+    
+    // Responsive sizing
+    val cardPadding = when {
+        screenWidth < 320 -> 16.dp  // Very small screens
+        screenWidth < 480 -> 20.dp  // Small screens
+        screenWidth > 720 -> 32.dp  // Large screens (tablets)
+        else -> 24.dp               // Default
+    }
+    
+    val contentPadding = when {
+        screenWidth < 320 -> 20.dp  // Very small screens
+        screenWidth < 480 -> 24.dp  // Small screens
+        screenWidth > 720 -> 40.dp  // Large screens (tablets)
+        else -> 32.dp               // Default
+    }
+    
+    val progressSize = when {
+        screenHeight < 600 -> 40.dp  // Small screens
+        screenHeight < 800 -> 48.dp  // Medium screens
+        screenWidth > 720 -> 56.dp   // Large screens (tablets)
+        else -> 48.dp                // Default
+    }
+    
+    val strokeWidth = when {
+        screenWidth > 720 -> 5.dp    // Large screens
+        else -> 4.dp                 // Default
+    }
+    
+    val fontSize = when {
+        screenHeight < 600 -> 18.sp   // Small screens
+        screenHeight < 800 -> 22.sp   // Medium screens
+        screenWidth > 720 -> 26.sp    // Large screens (tablets)
+        else -> 22.sp                 // Default
+    }
+    
+    val spacing = when {
+        screenHeight < 600 -> 16.dp   // Small screens
+        screenHeight < 800 -> 20.dp   // Medium screens
+        screenWidth > 720 -> 28.dp    // Large screens (tablets)
+        else -> 24.dp                 // Default
+    }
+    
+    Dialog(
+        onDismissRequest = { },
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(cardPadding),
+            shape = RoundedCornerShape(
+                topStart = 24.dp,
+                topEnd = 24.dp,
+                bottomStart = 24.dp,
+                bottomEnd = 24.dp
+            ),
+            colors = CardDefaults.cardColors(
+                containerColor = LoginColors.background
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 16.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(contentPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing)
+            ) {
+                // Container para el indicador de carga con fondo
+                Box(
+                    modifier = Modifier
+                        .size(progressSize + 16.dp)
+                        .background(
+                            color = LoginColors.buttonPrimary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = LoginColors.buttonPrimary,
+                        modifier = Modifier.size(progressSize),
+                        strokeWidth = strokeWidth
+                    )
+                }
+                
+                // Texto de verificación con sombra
+                Text(
+                    text = "Verificando credenciales",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = LoginColors.dark,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = fontSize,
+                        shadow = Shadow(
+                            color = Color.Black.copy(alpha = 0.1f),
+                            offset = Offset(1f, 1f),
+                            blurRadius = 2f
+                        )
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ClearDataButton(viewModel: LoginViewModel) {
+    TextButton(
+        onClick = { viewModel.clearAllData() },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "Limpiar datos de la app",
+            style = MaterialTheme.typography.bodySmall.copy(
+                color = LoginColors.link,
+                fontWeight = FontWeight.Medium
+            )
+        )
+    }
 }

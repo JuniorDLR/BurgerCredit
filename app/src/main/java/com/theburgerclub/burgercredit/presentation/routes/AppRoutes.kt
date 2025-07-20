@@ -4,6 +4,9 @@ sealed class AppRoute(val route: String) {
     // Auth
     object LoginScreen : AppRoute("login")
     object RegisterScreen : AppRoute("register")
+    
+    // Home
+    object HomeScreen : AppRoute("home")
 
     // Clientes
     object CustomerScreen : AppRoute("customer")

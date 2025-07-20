@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.theburgerclub.burgercredit.presentation.home.ui.MainScreen
 import com.theburgerclub.burgercredit.presentation.login.ui.LoginScreen
 import com.theburgerclub.burgercredit.presentation.login.ui.SignUpScreen
 import com.theburgerclub.burgercredit.presentation.routes.AppRoute
@@ -38,7 +39,7 @@ fun AppNavGraph() {
     ) {
         composable(route = AppRoute.LoginScreen.route) { LoginScreen(navController) }
         composable(route = AppRoute.RegisterScreen.route) { SignUpScreen(navController) }
-        // Aquí irán los composables de las pantallas, por ejemplo:
+        composable(route = AppRoute.HomeScreen.route) { MainScreen() }
         // composable(AppRoute.CustomerScreen.route) { ... }
         // composable(AppRoute.EditCustomerScreen.route) { ... }
         // composable(AppRoute.DishesScreen.route) { ... }

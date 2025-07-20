@@ -32,4 +32,8 @@ class AdminRepository @Inject constructor(
         val adminEntity = AdminMapper.toAdminEntity(admin)
         adminDao.updateAdmin(adminEntity)
     }
+    
+    suspend fun deleteAllAdmins() {
+        adminDao.deleteAllAdmins()
+    }
 } 

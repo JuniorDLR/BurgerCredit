@@ -21,4 +21,7 @@ interface AdminDao {
     
     @Update
     suspend fun updateAdmin(admin: AdminEntity)
+    
+    @Query("DELETE FROM admin")
+    suspend fun deleteAllAdmins()
 } 
