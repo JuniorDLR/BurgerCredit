@@ -1,5 +1,6 @@
 package com.theburgerclub.burgercredit.presentation.home.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -20,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
 import com.theburgerclub.burgercredit.R
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -234,15 +237,8 @@ fun HomeSummarySection() {
                     subtitle = "Pending payments",
                     modifier = Modifier.weight(1f)
                 )
-
-                SummaryCard(
-                    title = "Overdue Debts",
-                    value = "23",
-                    subtitle = "Requires attention",
-                    modifier = Modifier.weight(1f),
-                    isWarning = true
-                )
             }
+
         } else {
             // Two rows layout for portrait
             Row(
@@ -269,19 +265,12 @@ fun HomeSummarySection() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(cardSpacing)
             ) {
-                SummaryCard(
-                    title = "Active Debts",
-                    value = "150",
+                val topClients = emptyList<String>() // tu lógica real
+                ActiveDebtsCard(
+                    activeDebts = "150",
                     subtitle = "Pending payments",
-                    modifier = Modifier.weight(1f)
-                )
-
-                SummaryCard(
-                    title = "Overdue Debts",
-                    value = "23",
-                    subtitle = "Requires attention",
-                    modifier = Modifier.weight(1f),
-                    isWarning = true
+                    topClients = topClients,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -391,6 +380,70 @@ fun SummaryCard(
                     textAlign = TextAlign.Center,
                     color = subtitleColor
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun ActiveDebtsCard(
+    activeDebts: String,
+    subtitle: String,
+    topClients: List<String>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Info principal a la izquierda
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Active Debts",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = activeDebts,
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            // Clientes destacados o mensaje a la derecha
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(start = 16.dp)
+            ) {
+                Text(
+                    text = "Top clients",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                if (topClients.isEmpty()) {
+                    Text(
+                        text = "No top clients yet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    topClients.take(3).forEach { client ->
+                        Text(
+                            text = client,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
