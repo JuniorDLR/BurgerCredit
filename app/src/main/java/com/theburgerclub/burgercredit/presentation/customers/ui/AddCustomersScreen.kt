@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.theburgerclub.burgercredit.domain.model.Customer
+import androidx.compose.ui.platform.LocalConfiguration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +32,42 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
     val uiState by viewModel.customerUiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp
+    val screenHeight = configuration.screenHeightDp
+
+    // Responsive paddings y tamaños
+    val horizontalPadding = when {
+        screenWidth < 320 -> 8.dp
+        screenWidth < 480 -> 16.dp
+        screenWidth > 720 -> 48.dp
+        else -> 24.dp
+    }
+    val isLandscape = screenWidth > screenHeight
+    val verticalPadding = when {
+        isLandscape -> 8.dp
+        screenHeight < 600 -> 12.dp
+        screenHeight < 800 -> 20.dp
+        screenWidth > 720 -> 48.dp
+        else -> 32.dp
+    }
+    val betweenFieldsSpace = if (isLandscape) 32.dp else verticalPadding
+    val textFieldMinHeight = when {
+        isLandscape -> 64.dp
+        screenHeight < 600 -> 56.dp
+        else -> 60.dp
+    }
+    val buttonHeight = when {
+        screenHeight < 600 -> 44.dp
+        screenHeight < 800 -> 48.dp
+        else -> 56.dp
+    }
+    val fontSize = when {
+        screenWidth < 320 -> 13.sp
+        screenWidth < 480 -> 15.sp
+        screenWidth > 720 -> 20.sp
+        else -> 16.sp
+    }
 
     Scaffold(
         topBar = {
@@ -51,14 +88,14 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                    .padding(horizontal = horizontalPadding, vertical = verticalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OutlinedTextField(
                     value = uiState.customerInput,
                     onValueChange = { viewModel.onCustomerInputChange(it) },
-                    label = { Text("Name") },
-                    placeholder = { Text("Enter customer name") },
+                    label = { Text("Name", fontSize = fontSize) },
+                    placeholder = { Text("Enter customer name", fontSize = fontSize) },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
                     isError = uiState.customerInputError != null,
@@ -77,7 +114,9 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                         unfocusedPlaceholderColor = LoginColors.inputIcon,
                         disabledPlaceholderColor = LoginColors.inputIcon
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = textFieldMinHeight)
                 )
                 if (uiState.customerInputError != null) {
                     Text(
@@ -87,7 +126,7 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                         modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(betweenFieldsSpace))
                 Button(
                     onClick = {
                         scope.launch {
@@ -100,12 +139,12 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(buttonHeight),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text(
                         text = "Save",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = fontSize)
                     )
                 }
             }
