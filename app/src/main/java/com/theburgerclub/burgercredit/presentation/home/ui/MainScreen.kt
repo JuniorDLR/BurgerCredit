@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.theburgerclub.burgercredit.R
 import com.theburgerclub.burgercredit.presentation.home.model.HomeTab
@@ -58,10 +59,34 @@ fun MainBottomNavigation(
     selectedTab: HomeTab,
     onTabSelected: (HomeTab) -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp
+    val screenHeight = configuration.screenHeightDp
+    
+    // Responsive sizing
+    val iconSize = when {
+        screenWidth < 320 -> 20.dp  // Very small screens
+        screenWidth < 480 -> 22.dp  // Small screens
+        screenWidth > 720 -> 28.dp  // Large screens (tablets)
+        else -> 24.dp               // Default
+    }
+    
+    val fontSize = when {
+        screenWidth < 320 -> 10.sp   // Very small screens
+        screenWidth < 480 -> 11.sp   // Small screens
+        screenWidth > 720 -> 14.sp   // Large screens (tablets)
+        else -> 12.sp                // Default
+    }
+    
+    val elevation = when {
+        screenWidth > 720 -> 12.dp   // Large screens (tablets)
+        else -> 8.dp                 // Default
+    }
+    
     BottomAppBar(
         containerColor = BurgerWhite,
         contentColor = BurgerBlack,
-        tonalElevation = 8.dp
+        tonalElevation = elevation
     ) {
         NavigationBarItem(
             selected = selectedTab == HomeTab.HOME,
@@ -70,13 +95,14 @@ fun MainBottomNavigation(
                 HomeNavigationIcon(
                     painter = painterResource(id = R.drawable.home),
                     contentDescription = "Home",
-                    tint = if (selectedTab == HomeTab.HOME) BurgerOrange else BurgerBlack
+                    tint = if (selectedTab == HomeTab.HOME) BurgerOrange else BurgerBlack,
+                    size = iconSize
                 )
             },
             label = { 
                 Text(
                     text = "Home",
-                    fontSize = 12.sp,
+                    fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.HOME) FontWeight.Bold else FontWeight.Normal
                 ) 
             },
@@ -96,13 +122,14 @@ fun MainBottomNavigation(
                 HomeNavigationIcon(
                     painter = painterResource(id = R.drawable.customers),
                     contentDescription = "Customers",
-                    tint = if (selectedTab == HomeTab.CUSTOMERS) BurgerOrange else BurgerBlack
+                    tint = if (selectedTab == HomeTab.CUSTOMERS) BurgerOrange else BurgerBlack,
+                    size = iconSize
                 )
             },
             label = { 
                 Text(
                     text = "Customers",
-                    fontSize = 12.sp,
+                    fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.CUSTOMERS) FontWeight.Bold else FontWeight.Normal
                 ) 
             },
@@ -122,13 +149,14 @@ fun MainBottomNavigation(
                 HomeNavigationIcon(
                     painter = painterResource(id = R.drawable.menu),
                     contentDescription = "Dishes",
-                    tint = if (selectedTab == HomeTab.DISHES) BurgerOrange else BurgerBlack
+                    tint = if (selectedTab == HomeTab.DISHES) BurgerOrange else BurgerBlack,
+                    size = iconSize
                 )
             },
             label = { 
                 Text(
                     text = "Dishes",
-                    fontSize = 12.sp,
+                    fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.DISHES) FontWeight.Bold else FontWeight.Normal
                 ) 
             },
@@ -148,13 +176,14 @@ fun MainBottomNavigation(
                 HomeNavigationIcon(
                     painter = painterResource(id = R.drawable.deuda),
                     contentDescription = "Debts",
-                    tint = if (selectedTab == HomeTab.DEBTS) BurgerOrange else BurgerBlack
+                    tint = if (selectedTab == HomeTab.DEBTS) BurgerOrange else BurgerBlack,
+                    size = iconSize
                 )
             },
             label = { 
                 Text(
                     text = "Debts",
-                    fontSize = 12.sp,
+                    fontSize = fontSize,
                     fontWeight = if (selectedTab == HomeTab.DEBTS) FontWeight.Bold else FontWeight.Normal
                 ) 
             },
@@ -173,12 +202,13 @@ fun MainBottomNavigation(
 fun HomeNavigationIcon(
     painter: Painter,
     contentDescription: String,
-    tint: Color = Color.Unspecified
+    tint: Color = Color.Unspecified,
+    size: androidx.compose.ui.unit.Dp = 24.dp
 ) {
     Image(
         painter = painter,
         contentDescription = contentDescription,
-        modifier = Modifier.size(24.dp),
+        modifier = Modifier.size(size),
         colorFilter = if (tint != Color.Unspecified) ColorFilter.tint(tint) else null
     )
 }
