@@ -53,10 +53,8 @@ import com.theburgerclub.burgercredit.presentation.theme.LoginColors
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -317,6 +315,55 @@ fun SharedOutlinedTextField(
 
 
 @Composable
+private fun <T : ListItemUi> GenericListItemRow(
+    item: T,
+    index: Int,
+    openCardId: Any?,
+    onEdit: (T) -> Unit,
+    onDelete: (T) -> Unit,
+    onDetails: ((T) -> Unit)? = null,
+    responsiveConfig: ResponsiveConfig,
+    setOpenCardId: (Any?) -> Unit
+) {
+    val subtitle = when (item) {
+        is ClientListItem -> item.getSubtitle()
+        is DishListItem -> item.getSubtitle()
+        else -> null
+    }
+    val cardId = when (item) {
+        is ClientListItem -> item.client.hashCode()
+        is DishListItem -> item.dish.hashCode()
+        else -> index
+    }
+    val showViewDebtsButton = item is ClientListItem
+    val imageUri = when (item) {
+        is DishListItem -> item.getPhotoUri()
+        else -> null
+    }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SwipeableClientCard(
+            name = item.getTitle(),
+            icon = item.getIcon(),
+            onEdit = { onEdit(item) },
+            onDelete = { onDelete(item) },
+            onDetails = onDetails?.let { { it(item) } },
+            cardHeight = responsiveConfig.cardHeight,
+            fontSize = responsiveConfig.fontSize,
+            subtitle = subtitle,
+            id = cardId,
+            openCardId = openCardId,
+            onCardSwiped = setOpenCardId,
+            showViewDebtsButton = showViewDebtsButton,
+            imageUri = imageUri
+        )
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = Color(0xFFE0E0E0)
+        )
+    }
+}
+
+@Composable
 fun <T : ListItemUi> GenericListScreen(
     modifier: Modifier = Modifier,
     title: String,
@@ -394,42 +441,16 @@ fun <T : ListItemUi> GenericListScreen(
         } else {
             LazyColumn {
                 itemsIndexed(items) { index, item ->
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        val subtitle = when (item) {
-                            is ClientListItem -> item.getSubtitle()
-                            is DishListItem -> item.getSubtitle()
-                            else -> null
-                        }
-                        val cardId = when (item) {
-                            is ClientListItem -> item.client.hashCode()
-                            is DishListItem -> item.dish.hashCode()
-                            else -> index
-                        }
-                        val showViewDebtsButton = item is ClientListItem
-                        val imageUri = when (item) {
-                            is DishListItem -> item.getPhotoUri()
-                            else -> null
-                        }
-                        SwipeableClientCard(
-                            name = item.getTitle(),
-                            icon = item.getIcon(),
-                            onEdit = { onEdit(item) },
-                            onDelete = { onDelete(item) },
-                            onDetails = onDetails?.let { { it(item) } },
-                            cardHeight = responsiveConfig.cardHeight,
-                            fontSize = responsiveConfig.fontSize,
-                            subtitle = subtitle,
-                            id = cardId,
-                            openCardId = openCardId,
-                            onCardSwiped = { openCardId = it },
-                            showViewDebtsButton = showViewDebtsButton,
-                            imageUri = imageUri
-                        )
-                        HorizontalDivider(
-                            thickness = 1.dp,
-                            color = Color(0xFFE0E0E0)
-                        )
-                    }
+                    GenericListItemRow(
+                        item = item,
+                        index = index,
+                        openCardId = openCardId,
+                        onEdit = onEdit,
+                        onDelete = onDelete,
+                        onDetails = onDetails,
+                        responsiveConfig = responsiveConfig,
+                        setOpenCardId = { openCardId = it }
+                    )
                 }
             }
         }
@@ -484,6 +505,118 @@ fun EmptyClientsMessage(
     }
 }
 
+@Composable
+private fun SwipeActionsRow(
+    onEdit: () -> Unit,
+    onDetails: (() -> Unit)? = null,
+    onDelete: () -> Unit,
+    showViewDebtsButton: Boolean,
+    actionsWidth: Dp,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .width(actionsWidth)
+            .fillMaxHeight()
+            .background(Color.White),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ActionSquareButton(
+            modifier = Modifier
+                .width(80.dp)
+                .fillMaxHeight(),
+            icon = Icons.Default.Edit,
+            label = "Editar",
+            backgroundColor = Color(0xFFA5D6A7),
+            onClick = onEdit
+        )
+        if (showViewDebtsButton) {
+            ActionSquareButton(
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
+                icon = Icons.Default.AttachMoney,
+                label = "View Debts",
+                backgroundColor = Color(0xFF90CAF9),
+                onClick = { onDetails?.invoke() }
+            )
+        }
+        ActionSquareButton(
+            modifier = Modifier
+                .width(80.dp)
+                .fillMaxHeight(),
+            icon = Icons.Default.Delete,
+            label = "Eliminar",
+            backgroundColor = Color(0xFFE57373),
+            onClick = onDelete
+        )
+    }
+}
+
+@Composable
+private fun SwipeableCardContent(
+    name: String,
+    icon: ImageVector,
+    subtitle: String?,
+    imageUri: String?,
+    fontSize: TextUnit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp)
+            .background(Color.White)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (!imageUri.isNullOrBlank()) {
+                coil.compose.AsyncImage(
+                    model = imageUri,
+                    contentDescription = null,
+                    modifier = Modifier.size(44.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = fontSize
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color(0xFF607D8B),
+                        fontSize = fontSize.times(0.85f)
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -523,62 +656,32 @@ fun SwipeableClientCard(
             .fillMaxWidth()
             .height(cardHeight)
     ) {
-        Row(
-            modifier = Modifier
-                .width(actionsWidth)
-                .fillMaxHeight()
-                .align(Alignment.CenterEnd)
-                .background(Color.White),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ActionSquareButton(
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight(),
-                icon = Icons.Default.Edit,
-                label = "Editar",
-                backgroundColor = Color(0xFFA5D6A7),
-                onClick = {
-                    onEdit()
-                    scope.launch {
-                        swipeOffset.animateTo(0f, tween(300))
-                        isRevealed = false
-                    }
+        SwipeActionsRow(
+            onEdit = {
+                onEdit()
+                scope.launch {
+                    swipeOffset.animateTo(0f, tween(300))
+                    isRevealed = false
                 }
-            )
-            if (showViewDebtsButton) {
-                ActionSquareButton(
-                    modifier = Modifier
-                        .width(80.dp)
-                        .fillMaxHeight(),
-                    icon = Icons.Default.AttachMoney,
-                    label = "View Debts",
-                    backgroundColor = Color(0xFF90CAF9),
-                    onClick = {
-                        onDetails?.invoke()
-                        scope.launch {
-                            swipeOffset.animateTo(0f, tween(300))
-                            isRevealed = false
-                        }
-                    }
-                )
-            }
-            ActionSquareButton(
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight(),
-                icon = Icons.Default.Delete,
-                label = "Eliminar",
-                backgroundColor = Color(0xFFE57373),
-                onClick = {
-                    onDelete()
-                    scope.launch {
-                        swipeOffset.animateTo(0f, tween(300))
-                        isRevealed = false
-                    }
+            },
+            onDetails = {
+                onDetails?.invoke()
+                scope.launch {
+                    swipeOffset.animateTo(0f, tween(300))
+                    isRevealed = false
                 }
-            )
-        }
+            },
+            onDelete = {
+                onDelete()
+                scope.launch {
+                    swipeOffset.animateTo(0f, tween(300))
+                    isRevealed = false
+                }
+            },
+            showViewDebtsButton = showViewDebtsButton,
+            actionsWidth = actionsWidth,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
         Box(
             modifier = Modifier
                 .offset { IntOffset(swipeOffset.value.toInt(), 0) }
@@ -617,65 +720,105 @@ fun SwipeableClientCard(
                     }
                 }
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(cardHeight)
-                    .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (!imageUri.isNullOrBlank()) {
-                        coil.compose.AsyncImage(
-                            model = imageUri,
-                            contentDescription = null,
-                            modifier = Modifier.size(44.dp),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                        )
-                    } else {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = fontSize
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    if (!subtitle.isNullOrBlank()) {
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Color(0xFF607D8B),
-                                fontSize = fontSize.times(0.85f)
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
+            SwipeableCardContent(
+                name = name,
+                icon = icon,
+                subtitle = subtitle,
+                imageUri = imageUri,
+                fontSize = fontSize
+            )
         }
     }
 }
 
+@Composable
+private fun FormTitle(title: String, subtitle: String, description: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+    )
+    Text(
+        text = subtitle,
+        style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray),
+        modifier = Modifier.padding(bottom = 4.dp),
+        textAlign = TextAlign.Center
+    )
+    if (description.isNotBlank()) {
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF7B7B7B)),
+            modifier = Modifier.padding(bottom = 12.dp),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun FormDivider() {
+    HorizontalDivider(
+        Modifier.padding(vertical = 8.dp),
+        DividerDefaults.Thickness,
+        DividerDefaults.color
+    )
+}
+
+@Composable
+private fun FormFields(fields: List<FormFieldData>) {
+    fields.forEachIndexed { idx, field ->
+        SharedOutlinedTextField(
+            value = field.value,
+            onValueChange = field.onValueChange,
+            label = field.label,
+            placeholder = field.placeholder,
+            isError = field.isError,
+            errorMessage = field.errorMessage,
+            modifier = Modifier.fillMaxWidth(),
+            fontSize = 16.sp,
+            minHeight = 60.dp,
+            onClear = field.onClear,
+            leadingIcon = field.leadingIcon,
+            keyboardOptions = field.keyboardOptions
+        )
+        if (idx < fields.lastIndex) {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun FormButton(
+    onSubmit: () -> Unit,
+    submitButtonText: String,
+    isLoading: Boolean,
+    buttonEnabled: Boolean
+) {
+    Button(
+        onClick = onSubmit,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = ButtonDefaults.buttonElevation(6.dp),
+        enabled = buttonEnabled && !isLoading
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        } else {
+            Icon(Icons.Default.Check, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = submitButtonText,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -724,84 +867,91 @@ fun GenericFormScreen(
                     topContent()
                     Spacer(Modifier.height(12.dp))
                 }
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray),
-                    modifier = Modifier.padding(bottom = 12.dp),
-                    textAlign = TextAlign.Center
-                )
-                if (description.isNotBlank()) {
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF7B7B7B)),
-                        modifier = Modifier.padding(bottom = 12.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-                HorizontalDivider(
-                    Modifier.padding(vertical = 8.dp),
-                    DividerDefaults.Thickness,
-                    DividerDefaults.color
-                )
-                fields.forEachIndexed { idx, field ->
-                    SharedOutlinedTextField(
-                        value = field.value,
-                        onValueChange = field.onValueChange,
-                        label = field.label,
-                        placeholder = field.placeholder,
-                        isError = field.isError,
-                        errorMessage = field.errorMessage,
-                        modifier = Modifier.fillMaxWidth(),
-                        fontSize = 16.sp,
-                        minHeight = 60.dp,
-                        onClear = field.onClear,
-                        leadingIcon = field.leadingIcon,
-                        keyboardOptions = field.keyboardOptions
-                    )
-                    if (idx < fields.lastIndex) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
+                FormTitle(title = title, subtitle = subtitle, description = description)
+                FormDivider()
+                FormFields(fields)
                 if (extraContent != null) {
                     Spacer(modifier = Modifier.height(16.dp))
                     extraContent()
                 }
                 Spacer(modifier = Modifier.height(28.dp))
-                Button(
-                    onClick = onSubmit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = ButtonDefaults.buttonElevation(6.dp),
-                    enabled = buttonEnabled && !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Icon(Icons.Default.Check, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = submitButtonText,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                        )
-                    }
-                }
+                FormButton(
+                    onSubmit = onSubmit,
+                    submitButtonText = submitButtonText,
+                    isLoading = isLoading,
+                    buttonEnabled = buttonEnabled
+                )
             }
         }
     }
 }
 
+@Composable
+private fun DeleteDialogIcon() {
+    Box(
+        modifier = Modifier
+            .size(80.dp)
+            .offset(y = (-10).dp)
+            .background(Color.White, shape = CircleShape)
+            .border(2.dp, Color(0xFFE57373), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = "Eliminar",
+            tint = Color(0xFFE57373),
+            modifier = Modifier.size(48.dp)
+        )
+    }
+}
+
+@Composable
+private fun DeleteDialogTitle() {
+    Text(
+        "Confirmar eliminación",
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+}
+
+@Composable
+private fun DeleteDialogMessage(data: String) {
+    Text(
+        text = buildAnnotatedString {
+            append("¿Estás seguro de que deseas eliminar a \"")
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                append(data)
+            }
+            append("\"? Esta acción no se puede deshacer.")
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(bottom = 24.dp),
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+private fun DeleteDialogActions(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedButton(
+            onClick = onDismiss,
+            modifier = Modifier.weight(1f)
+        ) {
+            Text("Cancelar")
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Button(
+            onClick = onConfirm,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text("Eliminar", color = Color.White)
+        }
+    }
+}
 
 @Composable
 fun DeleteDialogShared(
@@ -842,60 +992,12 @@ fun DeleteDialogShared(
                         end = 16.dp
                     )
                 ) {
-                    Text(
-                        "Confirmar eliminación",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Text(
-                        text = buildAnnotatedString {
-                            append("¿Estás seguro de que deseas eliminar a \"")
-                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(data)
-                            }
-                            append("\"? Esta acción no se puede deshacer.")
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 24.dp),
-                        textAlign = TextAlign.Center
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Cancelar")
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Button(
-                            onClick = onConfirm,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Eliminar", color = Color.White)
-                        }
-                    }
+                    DeleteDialogTitle()
+                    DeleteDialogMessage(data)
+                    DeleteDialogActions(onConfirm, onDismiss)
                 }
             }
-            // Icono de basura sobresaliente
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .offset(y = (-10).dp)
-                    .background(Color.White, shape = CircleShape)
-                    .border(2.dp, Color(0xFFE57373), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Eliminar",
-                    tint = Color(0xFFE57373),
-                    modifier = Modifier.size(48.dp)
-                )
-            }
+            DeleteDialogIcon()
         }
     }
 }
