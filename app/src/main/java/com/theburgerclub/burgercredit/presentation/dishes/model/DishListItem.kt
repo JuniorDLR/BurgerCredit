@@ -9,4 +9,5 @@ class DishListItem(val dish: Dish) : ListItemUi {
     override fun getTitle() = dish.name
     override fun getIcon() = Icons.Default.Info
     fun getSubtitle(): String = "$${"%.2f".format(dish.price)}"
+    fun getPhotoUri(): String? = dish.photoUri
 } 

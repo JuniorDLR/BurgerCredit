@@ -19,9 +19,27 @@ import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.LaunchedEffect
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import coil.compose.AsyncImage
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Close
+import com.theburgerclub.burgercredit.presentation.dishes.model.DishUiState
+
 
 @Composable
-fun AddDishesScreen(navController: NavHostController, dishId: Long? = null, viewModel: DishViewModel = hiltViewModel()) {
+fun AddDishesScreen(
+    navController: NavHostController,
+    dishId: Long? = null,
+    viewModel: DishViewModel = hiltViewModel()
+) {
     val uiState by viewModel.dishUiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -36,6 +54,13 @@ fun AddDishesScreen(navController: NavHostController, dishId: Long? = null, view
     val isEdit = uiState.selectedDish != null && dishId != null
     val topBarTitle = if (isEdit) "Edit Dish" else "Add Dish"
 
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            viewModel.uploadImage(uri, context)
+        }
+    )
+
     Scaffold(
         topBar = {
             TopAppBarShared(
@@ -45,6 +70,7 @@ fun AddDishesScreen(navController: NavHostController, dishId: Long? = null, view
             )
         }
     ) { innerPadding ->
+
         GenericFormScreen(
             title = topBarTitle,
             subtitle = if (isEdit) "Edit dish details" else "Register a new dish",
@@ -80,9 +106,14 @@ fun AddDishesScreen(navController: NavHostController, dishId: Long? = null, view
             ),
             onSubmit = {
                 scope.launch {
-                    val success = if (isEdit) viewModel.validateAndUpdateDish() else viewModel.validateAndAddDish()
+                    val success =
+                        if (isEdit) viewModel.validateAndUpdateDish() else viewModel.validateAndAddDish()
                     if (success) {
-                        Toast.makeText(context, if (isEdit) "Dish updated!" else "Dish saved!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            if (isEdit) "Dish updated!" else "Dish saved!",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         navController.popBackStack()
                     }
                 }
@@ -97,7 +128,106 @@ fun AddDishesScreen(navController: NavHostController, dishId: Long? = null, view
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            extraContent = {
+                ImagePickerCard(
+                    imageUri = uiState.imageUri,
+                    imageState = uiState.stepImageState,
+                    imageError = uiState.imageError,
+                    onPickImage = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    },
+                    onRemoveImage = {
+                        viewModel.setImageUri(null)
+                        viewModel.setImageError(DishUiState.ImageError.None)
+                        viewModel.changeUploadImageState(DishUiState.StepImageState.NONE)
+                    }
+                )
+            }
         )
+
+    }
+}
+
+@Composable
+fun ImagePickerCard(
+    imageUri: Uri?,
+    imageState: DishUiState.StepImageState,
+    imageError: DishUiState.ImageError,
+    onPickImage: () -> Unit,
+    onRemoveImage: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onPickImage() }
+            .height(120.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            when (imageState) {
+                DishUiState.StepImageState.NONE, DishUiState.StepImageState.CLOSE -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Tap to select an image",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "PNG, JPG, JPEG, WEBP (max. 2MB)",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
+                        )
+
+                    }
+                }
+
+                DishUiState.StepImageState.LOADING -> {
+                    CircularProgressIndicator()
+                }
+
+                DishUiState.StepImageState.IMAGE -> {
+                    Box(Modifier.fillMaxSize()) {
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(90.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            onClick = onRemoveImage,
+                            modifier = Modifier.align(Alignment.TopEnd)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Eliminar imagen")
+                        }
+                    }
+                }
+            }
+            if (imageError != DishUiState.ImageError.None && imageError != DishUiState.ImageError.Empty) {
+                Text(
+                    text = when (imageError) {
+                        DishUiState.ImageError.ErrorSize -> "Image is too large"
+                        DishUiState.ImageError.ErrorExtension -> "Unsupported format"
+                        else -> "Image error"
+                    },
+                    color = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(8.dp)
+                )
+            }
+        }
     }
 }

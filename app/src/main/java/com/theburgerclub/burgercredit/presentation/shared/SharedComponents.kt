@@ -262,7 +262,13 @@ fun SharedOutlinedTextField(
             singleLine = true,
             isError = isError,
             leadingIcon = if (leadingIcon != null) {
-                { Icon(imageVector = leadingIcon, contentDescription = null, tint = if (isError) Color.Red else MaterialTheme.colorScheme.primary) }
+                {
+                    Icon(
+                        imageVector = leadingIcon,
+                        contentDescription = null,
+                        tint = if (isError) Color.Red else MaterialTheme.colorScheme.primary
+                    )
+                }
             } else null,
             trailingIcon = {
                 if (onClear != null && value.isNotEmpty()) {
@@ -301,7 +307,9 @@ fun SharedOutlinedTextField(
                 text = errorMessage,
                 color = Color.Red,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .padding(top = 4.dp)
             )
         }
     }
@@ -327,7 +335,7 @@ fun <T : ListItemUi> GenericListScreen(
     onConfirmDelete: () -> Unit,
     onDismissDelete: () -> Unit,
     getTitleForDialog: (T) -> String = { it.getTitle() },
-    responsiveConfig: ResponsiveConfig ,
+    responsiveConfig: ResponsiveConfig,
     icon: ImageVector = Icons.Default.Person
 ) {
     var openCardId by remember { mutableStateOf<Any?>(null) }
@@ -398,6 +406,10 @@ fun <T : ListItemUi> GenericListScreen(
                             else -> index
                         }
                         val showViewDebtsButton = item is ClientListItem
+                        val imageUri = when (item) {
+                            is DishListItem -> item.getPhotoUri()
+                            else -> null
+                        }
                         SwipeableClientCard(
                             name = item.getTitle(),
                             icon = item.getIcon(),
@@ -410,7 +422,8 @@ fun <T : ListItemUi> GenericListScreen(
                             id = cardId,
                             openCardId = openCardId,
                             onCardSwiped = { openCardId = it },
-                            showViewDebtsButton = showViewDebtsButton
+                            showViewDebtsButton = showViewDebtsButton,
+                            imageUri = imageUri
                         )
                         HorizontalDivider(
                             thickness = 1.dp,
@@ -486,7 +499,8 @@ fun SwipeableClientCard(
     id: Any,
     openCardId: Any?,
     onCardSwiped: (Any?) -> Unit,
-    showViewDebtsButton: Boolean = true
+    showViewDebtsButton: Boolean = true,
+    imageUri: String? = null
 ) {
     val buttonWidth = 80.dp
     val actionsCount = if (showViewDebtsButton) 3 else 2
@@ -618,12 +632,21 @@ fun SwipeableClientCard(
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    if (!imageUri.isNullOrBlank()) {
+                        coil.compose.AsyncImage(
+                            model = imageUri,
+                            contentDescription = null,
+                            modifier = Modifier.size(44.dp),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -667,16 +690,21 @@ fun GenericFormScreen(
     isLoading: Boolean,
     topContent: @Composable (() -> Unit)? = null,
     buttonEnabled: Boolean = true,
-    backgroundBrush: Brush = Brush.verticalGradient(listOf(Color(0xFFF7F7F9), Color(0xFFE3E6F3))),
     cardShape: RoundedCornerShape = RoundedCornerShape(28.dp),
-    cardPadding: PaddingValues = PaddingValues(top = 48.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
-    contentPadding: PaddingValues = PaddingValues(28.dp)
+    cardPadding: PaddingValues = PaddingValues(
+        top = 16.dp,
+        start = 16.dp,
+        end = 16.dp,
+        bottom = 16.dp
+    ),
+    contentPadding: PaddingValues = PaddingValues(28.dp),
+    extraContent: @Composable (() -> Unit)? = null,
+    backgroundBrush: Brush = Brush.verticalGradient(listOf(Color(0xFFF7F7F9), Color(0xFFE3E6F3)))
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(brush = backgroundBrush),
-        contentAlignment = Alignment.TopCenter
+            .background(brush = backgroundBrush)
     ) {
         Card(
             modifier = Modifier
@@ -685,7 +713,8 @@ fun GenericFormScreen(
                 .shadow(18.dp, cardShape),
             shape = cardShape,
             border = BorderStroke(1.dp, Color(0x22000000)),
-            elevation = CardDefaults.cardElevation(16.dp)
+            elevation = CardDefaults.cardElevation(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -705,6 +734,14 @@ fun GenericFormScreen(
                     modifier = Modifier.padding(bottom = 12.dp),
                     textAlign = TextAlign.Center
                 )
+                if (description.isNotBlank()) {
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF7B7B7B)),
+                        modifier = Modifier.padding(bottom = 12.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
                 HorizontalDivider(
                     Modifier.padding(vertical = 8.dp),
                     DividerDefaults.Thickness,
@@ -729,6 +766,10 @@ fun GenericFormScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
+                if (extraContent != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    extraContent()
+                }
                 Spacer(modifier = Modifier.height(28.dp))
                 Button(
                     onClick = onSubmit,
@@ -749,7 +790,10 @@ fun GenericFormScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = submitButtonText,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
                         )
                     }
                 }
@@ -781,13 +825,22 @@ fun DeleteDialogShared(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 40.dp)
-                    .border(width = 1.dp, Color(0xFFE57373), shape =  RoundedCornerShape(20.dp)), // Espacio para el icono
+                    .border(
+                        width = 1.dp,
+                        Color(0xFFE57373),
+                        shape = RoundedCornerShape(20.dp)
+                    ), // Espacio para el icono
                 elevation = CardDefaults.cardElevation(8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(top = 48.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
+                    modifier = Modifier.padding(
+                        top = 48.dp,
+                        bottom = 24.dp,
+                        start = 16.dp,
+                        end = 16.dp
+                    )
                 ) {
                     Text(
                         "Confirmar eliminación",
