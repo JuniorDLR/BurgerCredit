@@ -9,5 +9,8 @@ data class CustomerUiState(
     val lastNameInput: String = "",
     val customerInputError: String? = null,
     val lastNameInputError: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val searchQuery: String = "",
+    val isSearching: Boolean = false,
+    val searchResults: List<Customer> = emptyList()
 ) 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -108,6 +109,13 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
         screenWidth > 720 -> 20.sp
         else -> 16.sp
     }
+    val titleFontSize = when {
+        isLandscape -> 16.sp  // Tamaño específico para títulos en landscape
+        screenWidth < 320 -> 14.sp
+        screenWidth < 480 -> 16.sp
+        screenWidth > 720 -> 22.sp
+        else -> 18.sp
+    }
 
     val clients = uiState.customers.map {
         Client(
@@ -117,13 +125,26 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
         )
     }
 
+    // Usar searchResults si hay búsqueda, sino usar todos los clientes
+    val displayClients = if (uiState.searchQuery.isNotBlank()) {
+        uiState.searchResults.map {
+            Client(
+                name = it.name,
+                lastName = it.lastName,
+                icon = Icons.Default.Person
+            )
+        }
+    } else {
+        clients
+    }
+
     fun getCustomerByName(name: String): Customer? = uiState.customers.find { it.name == name }
 
     Column(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(horizontal = horizontalPadding)) {
             OutlinedTextField(
-                value = "",
-                onValueChange = { },
+                value = uiState.searchQuery,
+                onValueChange = { viewModel.updateSearchQuery(it) },
                 placeholder = {
                     Text(
                         "Search clients",
@@ -131,7 +152,17 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
                         fontSize = fontSize
                     )
                 },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                leadingIcon = { 
+                    if (uiState.isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = verticalPadding)
@@ -146,16 +177,16 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
                 )
             )
             Text(
-                text = "Existing Clients",
+                text = if (uiState.searchQuery.isNotBlank()) "Search Results" else "Existing Clients",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = fontSize
+                    fontSize = titleFontSize
                 ),
                 modifier = Modifier.padding(vertical = verticalPadding)
             )
         }
         ClientList(
-            clients = clients,
+            clients = displayClients,
             onEdit = { },
             onDelete = { client ->
                 val customer = getCustomerByName(client.name)

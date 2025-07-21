@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,6 +23,8 @@ class CustomerViewModel @Inject constructor(
 
     private val _customerUiState = MutableStateFlow(CustomerUiState())
     val customerUiState: StateFlow<CustomerUiState> = _customerUiState.asStateFlow()
+    
+    private var searchJob: Job? = null
 
     init {
         loadCustomers()
@@ -93,6 +97,63 @@ class CustomerViewModel @Inject constructor(
                 customerInputError = null,
                 lastNameInputError = null,
                 isLoading = false
+            )
+        }
+    }
+
+    fun updateSearchQuery(query: String) {
+        _customerUiState.update { it.copy(searchQuery = query) }
+        
+        // Cancelar búsqueda anterior si existe
+        searchJob?.cancel()
+        
+        if (query.isBlank()) {
+            // Si la búsqueda está vacía, mostrar todos los clientes
+            _customerUiState.update { 
+                it.copy(
+                    searchResults = emptyList(),
+                    isSearching = false
+                )
+            }
+        } else {
+            // Iniciar búsqueda con debounce
+            searchJob = viewModelScope.launch {
+                delay(300) // Debounce de 300ms
+                searchCustomers(query)
+            }
+        }
+    }
+
+    private suspend fun searchCustomers(query: String) {
+        _customerUiState.update { it.copy(isSearching = true) }
+        
+        // Pequeño delay para que se vea el loading
+        delay(500)
+        
+        try {
+            val customers = customerUseCase.searchCustomersByName(query).first()
+            _customerUiState.update { 
+                it.copy(
+                    searchResults = customers,
+                    isSearching = false
+                )
+            }
+        } catch (e: Exception) {
+            _customerUiState.update { 
+                it.copy(
+                    searchResults = emptyList(),
+                    isSearching = false
+                )
+            }
+        }
+    }
+
+    fun clearSearch() {
+        _customerUiState.update { 
+            it.copy(
+                searchQuery = "",
+                searchResults = emptyList(),
+                isSearching = false
             )
         }
     }
