@@ -79,6 +79,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -96,6 +97,9 @@ import com.theburgerclub.burgercredit.presentation.customers.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.dishes.model.DishListItem
 import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
 import com.theburgerclub.burgercredit.presentation.shared.model.ResponsiveConfig
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.lazy.itemsIndexed
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -326,6 +330,7 @@ fun <T : ListItemUi> GenericListScreen(
     responsiveConfig: ResponsiveConfig ,
     icon: ImageVector = Icons.Default.Person
 ) {
+    var openCardId by remember { mutableStateOf<Any?>(null) }
     Column(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(horizontal = responsiveConfig.horizontalPadding)) {
             OutlinedTextField(
@@ -380,13 +385,19 @@ fun <T : ListItemUi> GenericListScreen(
             )
         } else {
             LazyColumn {
-                items(items) { item ->
+                itemsIndexed(items) { index, item ->
                     Column(modifier = Modifier.fillMaxWidth()) {
                         val subtitle = when (item) {
                             is ClientListItem -> item.getSubtitle()
                             is DishListItem -> item.getSubtitle()
                             else -> null
                         }
+                        val cardId = when (item) {
+                            is ClientListItem -> item.client.hashCode()
+                            is DishListItem -> item.dish.hashCode()
+                            else -> index
+                        }
+                        val showViewDebtsButton = item is ClientListItem
                         SwipeableClientCard(
                             name = item.getTitle(),
                             icon = item.getIcon(),
@@ -395,7 +406,11 @@ fun <T : ListItemUi> GenericListScreen(
                             onDetails = onDetails?.let { { it(item) } },
                             cardHeight = responsiveConfig.cardHeight,
                             fontSize = responsiveConfig.fontSize,
-                            subtitle = subtitle
+                            subtitle = subtitle,
+                            id = cardId,
+                            openCardId = openCardId,
+                            onCardSwiped = { openCardId = it },
+                            showViewDebtsButton = showViewDebtsButton
                         )
                         HorizontalDivider(
                             thickness = 1.dp,
@@ -456,7 +471,7 @@ fun EmptyClientsMessage(
     }
 }
 
-// 6. SwipeableClientCard con onDetails opcional
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeableClientCard(
@@ -467,15 +482,28 @@ fun SwipeableClientCard(
     onDetails: (() -> Unit)? = null,
     cardHeight: Dp = 70.dp,
     fontSize: TextUnit = 16.sp,
-    subtitle: String? = null
+    subtitle: String? = null,
+    id: Any,
+    openCardId: Any?,
+    onCardSwiped: (Any?) -> Unit,
+    showViewDebtsButton: Boolean = true
 ) {
     val buttonWidth = 80.dp
-    val actionsWidth = buttonWidth * 3
+    val actionsCount = if (showViewDebtsButton) 3 else 2
+    val actionsWidth = buttonWidth * actionsCount
     val density = LocalDensity.current
     val maxSwipe = with(density) { actionsWidth.toPx() }
     val swipeOffset = remember { Animatable(0f) }
     var isRevealed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val currentId by rememberUpdatedState(id)
+    // Close if another card is opened
+    LaunchedEffect(openCardId) {
+        if (openCardId != currentId && isRevealed) {
+            swipeOffset.animateTo(0f, tween(80))
+            isRevealed = false
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -504,21 +532,23 @@ fun SwipeableClientCard(
                     }
                 }
             )
-            ActionSquareButton(
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight(),
-                icon = Icons.Default.Info,
-                label = "Detalles",
-                backgroundColor = Color(0xFF90CAF9),
-                onClick = {
-                    onDetails?.invoke()
-                    scope.launch {
-                        swipeOffset.animateTo(0f, tween(300))
-                        isRevealed = false
+            if (showViewDebtsButton) {
+                ActionSquareButton(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .fillMaxHeight(),
+                    icon = Icons.Default.AttachMoney,
+                    label = "View Debts",
+                    backgroundColor = Color(0xFF90CAF9),
+                    onClick = {
+                        onDetails?.invoke()
+                        scope.launch {
+                            swipeOffset.animateTo(0f, tween(300))
+                            isRevealed = false
+                        }
                     }
-                }
-            )
+                )
+            }
             ActionSquareButton(
                 modifier = Modifier
                     .width(80.dp)
@@ -547,9 +577,11 @@ fun SwipeableClientCard(
                                 if (swipeOffset.value < -maxSwipe / 2) {
                                     swipeOffset.animateTo(-maxSwipe, tween(200))
                                     isRevealed = true
+                                    onCardSwiped(currentId)
                                 } else {
-                                    swipeOffset.animateTo(0f, tween(200))
+                                    swipeOffset.animateTo(0f, tween(80))
                                     isRevealed = false
+                                    onCardSwiped(null)
                                 }
                             }
                         },
@@ -563,14 +595,14 @@ fun SwipeableClientCard(
                     if (isRevealed) {
                         detectTapGestures {
                             scope.launch {
-                                swipeOffset.animateTo(0f, tween(200))
+                                swipeOffset.animateTo(0f, tween(80))
                                 isRevealed = false
+                                onCardSwiped(null)
                             }
                         }
                     }
                 }
         ) {
-            // Puedes personalizar el card aquí si lo deseas
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
