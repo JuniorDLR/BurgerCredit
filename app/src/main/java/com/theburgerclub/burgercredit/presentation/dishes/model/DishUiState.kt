@@ -17,17 +17,4 @@ data class DishUiState(
     val imageUri: Uri? = null,
     val imageError: ImageError = ImageError.None,
     val stepImageState: StepImageState = StepImageState.NONE
-) {
-    sealed class ImageError {
-        object None : ImageError()
-        object Empty : ImageError()
-        object ErrorSize : ImageError()
-        object ErrorExtension : ImageError()
-    }
-    enum class StepImageState {
-        LOADING,
-        NONE,
-        IMAGE,
-        CLOSE
-    }
-} 
+)

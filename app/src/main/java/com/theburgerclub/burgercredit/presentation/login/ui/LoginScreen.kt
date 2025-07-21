@@ -44,9 +44,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.ui.platform.LocalConfiguration
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalDensity
 
 
 @Composable
@@ -57,6 +58,13 @@ fun LoginScreen(
     val loginUiState by loginViewModel.loginUiState.collectAsState()
     val context = LocalContext.current
 
+    // Responsive: calcula screenWidth y screenHeight aquí
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
+    val containerSize = windowInfo.containerSize
+    val screenWidth = containerSize.width / density.density
+    val screenHeight = containerSize.height / density.density
+
     LaunchedEffect(loginUiState.result) {
         when (val result = loginUiState.result) {
             is LoginResultState.Error -> {
@@ -64,7 +72,7 @@ fun LoginScreen(
             }
 
             is LoginResultState.Success -> {
-                Toast.makeText(context, "Login exitoso", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
             }
 
             else -> {}
@@ -85,7 +93,7 @@ fun LoginScreen(
         LoginBody(loginViewModel, navController)
         // AlertDialog para verificación automática
         if (loginUiState.result is LoginResultState.Loading && loginUiState.rememberMe) {
-            AutoLoginDialog()
+            AutoLoginDialog(screenWidth = screenWidth, screenHeight = screenHeight)
         }
     }
 
@@ -96,9 +104,11 @@ fun LoginScreen(
 fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavController) {
     val loginUiState by viewModel.loginUiState.collectAsState()
     var animationStep by remember { mutableIntStateOf(0) }
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-    val screenWidth = configuration.screenWidthDp
+    val windowInfo = LocalWindowInfo.current
+    val containerSize = windowInfo.containerSize
+    val density = LocalDensity.current
+    val screenWidth = containerSize.width / density.density
+    val screenHeight = containerSize.height / density.density
 
     // Lógica para habilitar controles solo cuando no está cargando
     val controlsEnabled = loginUiState.result !is LoginResultState.Loading
@@ -166,7 +176,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                     initialOffsetY = { -20 },
                     animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
                 )
-            ) { AppLogo() }
+            ) { AppLogo(screenWidth, screenHeight) }
         }
 
         item {
@@ -178,7 +188,7 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                     initialOffsetY = { -15 },
                     animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
                 )
-            ) { AppTitle() }
+            ) { AppTitle(screenWidth, screenHeight) }
         }
 
         item {
@@ -200,13 +210,15 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                         loginUiState.username,
                         onValueChange = viewModel::onUsernameChange,
                         error = loginUiState.usernameError,
-                        enabled = controlsEnabled
+                        enabled = controlsEnabled,
+                        screenHeight = screenHeight
                     )
                     PasswordInput(
                         loginUiState.password,
                         onValueChange = viewModel::onPasswordChange,
                         error = loginUiState.passwordError,
-                        enabled = controlsEnabled
+                        enabled = controlsEnabled,
+                        screenHeight = screenHeight
                     )
                 }
             }
@@ -243,7 +255,8 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
                 LoginButtons(
                     viewModel = viewModel,
                     navController = navController,
-                    enabled = controlsEnabled
+                    enabled = controlsEnabled,
+                    screenHeight = screenHeight
                 )
             }
         }
@@ -267,19 +280,20 @@ fun LoginBody(viewModel: LoginViewModel = hiltViewModel(), navController: NavCon
 }
 
 @Composable
-fun AppLogo() {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-    val screenWidth = configuration.screenWidthDp
-
+fun AppLogo(screenWidth: Float? = null, screenHeight: Float? = null) {
+    val (w, h) = if (screenWidth != null && screenHeight != null) screenWidth to screenHeight else run {
+        val windowInfo = LocalWindowInfo.current
+        val density = LocalDensity.current
+        val size = windowInfo.containerSize
+        size.width / density.density to size.height / density.density
+    }
     // Responsive logo size
     val logoSize = when {
-        screenHeight < 600 -> 180.dp  // Small screens
-        screenHeight < 800 -> 220.dp  // Medium screens
-        screenWidth > 720 -> 280.dp   // Large screens (tablets)
+        h < 600 -> 180.dp  // Small screens
+        h < 800 -> 220.dp  // Medium screens
+        w > 720 -> 280.dp   // Large screens (tablets)
         else -> 250.dp                // Default
     }
-
     Image(
         painter = painterResource(id = R.drawable.logo),
         contentDescription = "Logo BurgerCredit",
@@ -288,26 +302,26 @@ fun AppLogo() {
 }
 
 @Composable
-fun AppTitle() {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-    val screenWidth = configuration.screenWidthDp
-
+fun AppTitle(screenWidth: Float? = null, screenHeight: Float? = null) {
+    val (w, h) = if (screenWidth != null && screenHeight != null) screenWidth to screenHeight else run {
+        val windowInfo = LocalWindowInfo.current
+        val density = LocalDensity.current
+        val size = windowInfo.containerSize
+        size.width / density.density to size.height / density.density
+    }
     // Responsive font size
     val fontSize = when {
-        screenHeight < 600 -> 24.sp   // Small screens
-        screenHeight < 800 -> 28.sp   // Medium screens
-        screenWidth > 720 -> 36.sp    // Large screens (tablets)
+        h < 600 -> 24.sp   // Small screens
+        h < 800 -> 28.sp   // Medium screens
+        w > 720 -> 36.sp    // Large screens (tablets)
         else -> 30.sp                 // Default
     }
-
     // Responsive letter spacing
     val letterSpacing = when {
-        screenWidth < 320 -> 1.sp     // Very small screens
-        screenWidth < 480 -> 1.5.sp   // Small screens
+        w < 320 -> 1.sp     // Very small screens
+        w < 480 -> 1.5.sp   // Small screens
         else -> 2.sp                  // Default
     }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -351,7 +365,8 @@ fun UsernameInput(
     value: String,
     onValueChange: (String) -> Unit,
     error: String? = null,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    screenHeight: Float? = null
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         LoginTextField(
@@ -367,7 +382,8 @@ fun UsernameInput(
             },
             isPassword = false,
             hasError = error != null,
-            enabled = enabled
+            enabled = enabled,
+            screenHeight = screenHeight
         )
         if (error != null) {
             Text(
@@ -385,7 +401,8 @@ fun PasswordInput(
     value: String,
     onValueChange: (String) -> Unit,
     error: String? = null,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    screenHeight: Float? = null
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         LoginTextField(
@@ -401,7 +418,8 @@ fun PasswordInput(
             },
             isPassword = true,
             hasError = error != null,
-            enabled = enabled
+            enabled = enabled,
+            screenHeight = screenHeight
         )
         if (error != null) {
             Text(
@@ -469,18 +487,20 @@ fun LoginTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     isPassword: Boolean = false,
     hasError: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    screenHeight: Float? = null
 ) {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-
+    val h = screenHeight ?: run {
+        val windowInfo = LocalWindowInfo.current
+        val density = LocalDensity.current
+        windowInfo.containerSize.height / density.density
+    }
     // Responsive field height
     val fieldHeight = when {
-        screenHeight < 600 -> 48.dp  // Small screens
-        screenHeight < 800 -> 52.dp  // Medium screens
+        h < 600 -> 48.dp  // Small screens
+        h < 800 -> 52.dp  // Medium screens
         else -> 56.dp                // Large screens
     }
-
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = label,
@@ -531,18 +551,20 @@ fun LoginActionButton(
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
     showProgress: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    screenHeight: Float? = null
 ) {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-
+    val h = screenHeight ?: run {
+        val windowInfo = LocalWindowInfo.current
+        val density = LocalDensity.current
+        windowInfo.containerSize.height / density.density
+    }
     // Responsive button height
     val buttonHeight = when {
-        screenHeight < 600 -> 44.dp  // Small screens
-        screenHeight < 800 -> 46.dp  // Medium screens
+        h < 600 -> 44.dp  // Small screens
+        h < 800 -> 46.dp  // Medium screens
         else -> 48.dp                // Large screens
     }
-
     OutlinedButton(
         onClick = onClick,
         modifier = modifier
@@ -577,7 +599,8 @@ fun LoginActionButton(
 fun LoginButtons(
     viewModel: LoginViewModel = hiltViewModel(),
     navController: NavController,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    screenHeight: Float? = null
 ) {
     val loginUiState by viewModel.loginUiState.collectAsState()
 
@@ -592,7 +615,8 @@ fun LoginButtons(
             textColor = LoginColors.buttonText,
             isLoading = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
             showProgress = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
-            enabled = enabled
+            enabled = enabled,
+            screenHeight = screenHeight
         )
         if (!loginUiState.adminExists) {
             LoginActionButton(
@@ -602,7 +626,8 @@ fun LoginButtons(
                 textColor = LoginColors.buttonText,
                 isLoading = loginUiState.result is LoginResultState.Loading && !loginUiState.rememberMe,
                 showProgress = false,
-                enabled = enabled
+                enabled = enabled,
+                screenHeight = screenHeight
             )
         }
     }
@@ -622,52 +647,44 @@ fun AppAuthor() {
 }
 
 @Composable
-fun AutoLoginDialog() {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-    val screenWidth = configuration.screenWidthDp
-
+fun AutoLoginDialog(screenWidth: Float, screenHeight: Float) {
+    val w = screenWidth
+    val h = screenHeight
     // Responsive sizing
     val cardPadding = when {
-        screenWidth < 320 -> 16.dp  // Very small screens
-        screenWidth < 480 -> 20.dp  // Small screens
-        screenWidth > 720 -> 32.dp  // Large screens (tablets)
+        w < 320 -> 16.dp  // Very small screens
+        w < 480 -> 20.dp  // Small screens
+        w > 720 -> 32.dp  // Large screens (tablets)
         else -> 24.dp               // Default
     }
-
     val contentPadding = when {
-        screenWidth < 320 -> 20.dp  // Very small screens
-        screenWidth < 480 -> 24.dp  // Small screens
-        screenWidth > 720 -> 40.dp  // Large screens (tablets)
+        w < 320 -> 20.dp  // Very small screens
+        w < 480 -> 24.dp  // Small screens
+        w > 720 -> 40.dp  // Large screens (tablets)
         else -> 32.dp               // Default
     }
-
     val progressSize = when {
-        screenHeight < 600 -> 40.dp  // Small screens
-        screenHeight < 800 -> 48.dp  // Medium screens
-        screenWidth > 720 -> 56.dp   // Large screens (tablets)
+        h < 600 -> 40.dp  // Small screens
+        h < 800 -> 48.dp  // Medium screens
+        w > 720 -> 56.dp   // Large screens (tablets)
         else -> 48.dp                // Default
     }
-
     val strokeWidth = when {
-        screenWidth > 720 -> 5.dp    // Large screens
+        w > 720 -> 5.dp    // Large screens
         else -> 4.dp                 // Default
     }
-
     val fontSize = when {
-        screenHeight < 600 -> 18.sp   // Small screens
-        screenHeight < 800 -> 22.sp   // Medium screens
-        screenWidth > 720 -> 26.sp    // Large screens (tablets)
+        h < 600 -> 18.sp   // Small screens
+        h < 800 -> 22.sp   // Medium screens
+        w > 720 -> 26.sp    // Large screens (tablets)
         else -> 22.sp                 // Default
     }
-
     val spacing = when {
-        screenHeight < 600 -> 16.dp   // Small screens
-        screenHeight < 800 -> 20.dp   // Medium screens
-        screenWidth > 720 -> 28.dp    // Large screens (tablets)
+        h < 600 -> 16.dp   // Small screens
+        h < 800 -> 20.dp   // Medium screens
+        w > 720 -> 28.dp    // Large screens (tablets)
         else -> 24.dp                 // Default
     }
-
     Dialog(
         onDismissRequest = { },
         properties = DialogProperties(
@@ -715,7 +732,6 @@ fun AutoLoginDialog() {
                         strokeWidth = strokeWidth
                     )
                 }
-
                 // Texto de verificación con sombra
                 Text(
                     text = "Verificando credenciales",

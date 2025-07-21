@@ -17,10 +17,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import android.net.Uri
 import android.content.Context
-import android.database.Cursor
-import android.provider.OpenableColumns
 import java.io.File
 import androidx.core.net.toUri
+import com.theburgerclub.burgercredit.presentation.dishes.model.ImageError
+import com.theburgerclub.burgercredit.presentation.dishes.model.StepImageState
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -38,21 +38,24 @@ class DishViewModel @Inject constructor(
     fun setImageUri(uri: Uri?) {
         _dishUiState.update { it.copy(imageUri = uri) }
     }
-    fun setImageError(error: DishUiState.ImageError) {
+
+    fun setImageError(error: ImageError) {
         _dishUiState.update { it.copy(imageError = error) }
     }
-    fun changeUploadImageState(state: DishUiState.StepImageState) {
+
+    fun changeUploadImageState(state: StepImageState) {
         _dishUiState.update { it.copy(stepImageState = state) }
     }
+
     fun handleStepImageLoading() {
         val uri = _dishUiState.value.imageUri
         if (uri == null) {
-            changeUploadImageState(DishUiState.StepImageState.NONE)
+            changeUploadImageState(StepImageState.NONE)
         } else {
-            changeUploadImageState(DishUiState.StepImageState.LOADING)
+            changeUploadImageState(StepImageState.LOADING)
             viewModelScope.launch {
                 delay(1200)
-                changeUploadImageState(DishUiState.StepImageState.IMAGE)
+                changeUploadImageState(StepImageState.IMAGE)
             }
         }
     }
@@ -130,7 +133,7 @@ class DishViewModel @Inject constructor(
         _dishUiState.update { it.copy(dishNameError = null, priceError = null) }
     }
 
-     suspend fun validateAndAddDish(): Boolean {
+    suspend fun validateAndAddDish(): Boolean {
         val name = _dishUiState.value.dishNameInput.trim()
         val priceStr = _dishUiState.value.priceInput.trim()
         val photoUri = _dishUiState.value.imageUri?.toString()
@@ -158,7 +161,15 @@ class DishViewModel @Inject constructor(
         }
         _dishUiState.update { it.copy(isLoading = true) }
         addDish(Dish(name = name, price = price!!, photoUri = photoUri))
-        _dishUiState.update { it.copy(dishNameInput = "", priceInput = "", isLoading = false, imageUri = null, stepImageState = DishUiState.StepImageState.NONE) }
+        _dishUiState.update {
+            it.copy(
+                dishNameInput = "",
+                priceInput = "",
+                isLoading = false,
+                imageUri = null,
+                stepImageState = StepImageState.NONE
+            )
+        }
         return true
     }
 
@@ -171,7 +182,7 @@ class DishViewModel @Inject constructor(
                 dishNameError = null,
                 priceError = null,
                 imageUri = dish.photoUri?.toUri(),
-                stepImageState = if (dish.photoUri.isNullOrBlank()) DishUiState.StepImageState.NONE else DishUiState.StepImageState.IMAGE
+                stepImageState = if (dish.photoUri.isNullOrBlank()) StepImageState.NONE else StepImageState.IMAGE
             )
         }
     }
@@ -233,19 +244,22 @@ class DishViewModel @Inject constructor(
         val extension = path.substringAfterLast('.', "").lowercase()
         return extension in allowedExtensions
     }
+
     fun isUnderMaxSize(path: String, maxSizeMB: Int = 2): Boolean {
         val file = File(path)
         val maxSizeByte = maxSizeMB * 1_048_576
         return file.length() <= maxSizeByte
     }
+
     fun isValidImage(path: String): Boolean {
         return isValidImageExtension(path) && isUnderMaxSize(path)
     }
+
     fun uploadImage(uri: Uri?, context: Context) {
         if (uri == null) {
             setImageUri(null)
-            setImageError(DishUiState.ImageError.Empty)
-            changeUploadImageState(DishUiState.StepImageState.NONE)
+            setImageError(ImageError.Empty)
+            changeUploadImageState(StepImageState.NONE)
             return
         }
         val persistentUri = copyImageToInternalStorage(context, uri)
@@ -253,19 +267,19 @@ class DishViewModel @Inject constructor(
         val extensionValid = isValidImageExtension(path)
         val sizeValid = isUnderMaxSize(path)
         val imageError = when {
-            path.isEmpty() -> DishUiState.ImageError.Empty
-            !extensionValid -> DishUiState.ImageError.ErrorExtension
-            !sizeValid -> DishUiState.ImageError.ErrorSize
-            else -> DishUiState.ImageError.None
+            path.isEmpty() -> ImageError.Empty
+            !extensionValid -> ImageError.ErrorExtension
+            !sizeValid -> ImageError.ErrorSize
+            else -> ImageError.None
         }
         if (isValidImage(path)) {
             setImageUri(persistentUri)
-            setImageError(DishUiState.ImageError.None)
+            setImageError(ImageError.None)
             handleStepImageLoading()
         } else {
             setImageUri(null)
             setImageError(imageError)
-            changeUploadImageState(DishUiState.StepImageState.NONE)
+            changeUploadImageState(StepImageState.NONE)
         }
     }
 

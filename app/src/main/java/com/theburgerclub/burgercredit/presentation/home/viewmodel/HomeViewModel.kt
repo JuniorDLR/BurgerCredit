@@ -25,7 +25,6 @@ class HomeViewModel @Inject constructor() : ViewModel() {
     fun loadInitialData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            // TODO: Load initial data for the selected tab
             _uiState.update { it.copy(isLoading = false) }
         }
     }

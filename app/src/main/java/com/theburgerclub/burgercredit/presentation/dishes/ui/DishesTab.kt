@@ -19,7 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import com.theburgerclub.burgercredit.presentation.dishes.model.DishListItem
-import com.theburgerclub.burgercredit.presentation.shared.model.rememberResponsiveConfig
+import com.theburgerclub.burgercredit.presentation.shared.model.rememberTabResponsiveConfig
 import androidx.navigation.NavController
 
 
@@ -45,6 +45,7 @@ fun DishesTabBody(modifier: Modifier = Modifier, viewModel: DishViewModel = hilt
     } else {
         uiState.dishes
     }
+    val responsiveConfig = rememberTabResponsiveConfig()
     GenericListScreen(
         title = "Dishes",
         searchPlaceholder = "Search dishes",
@@ -70,7 +71,7 @@ fun DishesTabBody(modifier: Modifier = Modifier, viewModel: DishViewModel = hilt
         },
         onDismissDelete = { dishToDelete = null },
         getTitleForDialog = { it.dish.name },
-        responsiveConfig = rememberResponsiveConfig(),
+        responsiveConfig = responsiveConfig,
         modifier = modifier,
         icon = Icons.Default.Info
     )

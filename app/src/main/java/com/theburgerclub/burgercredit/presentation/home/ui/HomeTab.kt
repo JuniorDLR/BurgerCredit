@@ -7,7 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -19,15 +18,21 @@ import com.airbnb.lottie.compose.LottieConstants
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalDensity
 import com.theburgerclub.burgercredit.R
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.IntSize
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTab() {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-    val screenWidth = configuration.screenWidthDp
+    val windowInfo = LocalWindowInfo.current
+    val containerSize: IntSize = windowInfo.containerSize
+    val density = LocalDensity.current
+    val screenWidth = containerSize.width / density.density
+    val screenHeight = containerSize.height / density.density
 
     // Responsive sizing
     val contentPadding = when {
@@ -60,11 +65,11 @@ fun HomeTab() {
             verticalArrangement = Arrangement.spacedBy(spacing)
         ) {
             item {
-                HomeBanner()
+                HomeBanner(screenWidth, screenHeight)
             }
 
             item {
-                HomeSummarySection()
+                HomeSummarySection(screenWidth, screenHeight)
             }
         }
     }
@@ -72,11 +77,7 @@ fun HomeTab() {
 
 
 @Composable
-fun HomeBanner() {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp
-    val screenWidth = configuration.screenWidthDp
-
+fun HomeBanner(screenWidth: Float, screenHeight: Float) {
     val isLandscape = screenWidth > screenHeight
 
     // Responsive sizing
@@ -174,11 +175,7 @@ fun HomeBanner() {
 }
 
 @Composable
-fun HomeSummarySection() {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    val screenHeight = configuration.screenHeightDp
-
+fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
     // Responsive sizing
     val spacing = when {
         screenWidth < 320 -> 12.dp  // Very small screens
@@ -219,21 +216,27 @@ fun HomeSummarySection() {
                     value = "$5,400",
                     subtitle = "+$320 this month",
                     modifier = Modifier.weight(1f),
-                    isPositive = true
+                    isPositive = true,
+                    screenWidth = screenWidth,
+                    screenHeight = screenHeight
                 )
 
                 SummaryCard(
                     title = "Total Customers",
                     value = "120",
                     subtitle = "With active debts",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    screenWidth = screenWidth,
+                    screenHeight = screenHeight
                 )
 
                 SummaryCard(
                     title = "Active Debts",
                     value = "150",
                     subtitle = "Pending payments",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    screenWidth = screenWidth,
+                    screenHeight = screenHeight
                 )
             }
 
@@ -248,14 +251,18 @@ fun HomeSummarySection() {
                     value = "$5,400",
                     subtitle = "+$320 this month",
                     modifier = Modifier.weight(1f),
-                    isPositive = true
+                    isPositive = true,
+                    screenWidth = screenWidth,
+                    screenHeight = screenHeight
                 )
 
                 SummaryCard(
                     title = "Total Customers",
                     value = "120",
                     subtitle = "With active debts",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    screenWidth = screenWidth,
+                    screenHeight = screenHeight
                 )
             }
 
@@ -277,17 +284,15 @@ fun HomeSummarySection() {
 
 @Composable
 fun SummaryCard(
+    modifier: Modifier = Modifier,
     title: String,
     value: String,
     subtitle: String? = null,
-    modifier: Modifier = Modifier,
     isPositive: Boolean = false,
-    isWarning: Boolean = false
+    isWarning: Boolean = false,
+    screenWidth: Float,
+    screenHeight: Float
 ) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    val screenHeight = configuration.screenHeightDp
-
     // Responsive sizing
     val padding = when {
         screenWidth < 320 -> 12.dp  // Very small screens

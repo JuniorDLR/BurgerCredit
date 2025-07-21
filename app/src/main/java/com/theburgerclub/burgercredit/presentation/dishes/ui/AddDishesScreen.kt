@@ -31,7 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Close
-import com.theburgerclub.burgercredit.presentation.dishes.model.DishUiState
+import com.theburgerclub.burgercredit.presentation.dishes.model.ImageError
+import com.theburgerclub.burgercredit.presentation.dishes.model.StepImageState
+import com.theburgerclub.burgercredit.presentation.shared.model.rememberFormResponsiveConfig
 
 
 @Composable
@@ -60,6 +62,8 @@ fun AddDishesScreen(
             viewModel.uploadImage(uri, context)
         }
     )
+
+    val responsiveConfig = rememberFormResponsiveConfig()
 
     Scaffold(
         topBar = {
@@ -129,6 +133,13 @@ fun AddDishesScreen(
                 )
             },
             modifier = Modifier.padding(innerPadding),
+            contentPadding = PaddingValues(responsiveConfig.horizontalPadding),
+            cardPadding = PaddingValues(
+                top = responsiveConfig.verticalPadding,
+                start = responsiveConfig.horizontalPadding,
+                end = responsiveConfig.horizontalPadding,
+                bottom = responsiveConfig.verticalPadding
+            ),
             extraContent = {
                 ImagePickerCard(
                     imageUri = uiState.imageUri,
@@ -143,8 +154,8 @@ fun AddDishesScreen(
                     },
                     onRemoveImage = {
                         viewModel.setImageUri(null)
-                        viewModel.setImageError(DishUiState.ImageError.None)
-                        viewModel.changeUploadImageState(DishUiState.StepImageState.NONE)
+                        viewModel.setImageError(ImageError.None)
+                        viewModel.changeUploadImageState(StepImageState.NONE)
                     }
                 )
             }
@@ -156,8 +167,8 @@ fun AddDishesScreen(
 @Composable
 fun ImagePickerCard(
     imageUri: Uri?,
-    imageState: DishUiState.StepImageState,
-    imageError: DishUiState.ImageError,
+    imageState: StepImageState,
+    imageError: ImageError,
     onPickImage: () -> Unit,
     onRemoveImage: () -> Unit
 ) {
@@ -174,7 +185,7 @@ fun ImagePickerCard(
             contentAlignment = Alignment.Center
         ) {
             when (imageState) {
-                DishUiState.StepImageState.NONE, DishUiState.StepImageState.CLOSE -> {
+                StepImageState.NONE, StepImageState.CLOSE -> {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -192,11 +203,11 @@ fun ImagePickerCard(
                     }
                 }
 
-                DishUiState.StepImageState.LOADING -> {
+                StepImageState.LOADING -> {
                     CircularProgressIndicator()
                 }
 
-                DishUiState.StepImageState.IMAGE -> {
+                StepImageState.IMAGE -> {
                     Box(Modifier.fillMaxSize()) {
                         AsyncImage(
                             model = imageUri,
@@ -215,11 +226,11 @@ fun ImagePickerCard(
                     }
                 }
             }
-            if (imageError != DishUiState.ImageError.None && imageError != DishUiState.ImageError.Empty) {
+            if (imageError != ImageError.None && imageError != ImageError.Empty) {
                 Text(
                     text = when (imageError) {
-                        DishUiState.ImageError.ErrorSize -> "Image is too large"
-                        DishUiState.ImageError.ErrorExtension -> "Unsupported format"
+                        ImageError.ErrorSize -> "Image is too large"
+                        ImageError.ErrorExtension -> "Unsupported format"
                         else -> "Image error"
                     },
                     color = Color.Red,

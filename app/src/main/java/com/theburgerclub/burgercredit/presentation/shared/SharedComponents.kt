@@ -94,10 +94,10 @@ import com.theburgerclub.burgercredit.presentation.customers.model.ClientListIte
 import com.theburgerclub.burgercredit.presentation.customers.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.dishes.model.DishListItem
 import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
-import com.theburgerclub.burgercredit.presentation.shared.model.ResponsiveConfig
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.lazy.itemsIndexed
+import com.theburgerclub.burgercredit.presentation.shared.model.TabResponsiveConfig
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -322,7 +322,7 @@ private fun <T : ListItemUi> GenericListItemRow(
     onEdit: (T) -> Unit,
     onDelete: (T) -> Unit,
     onDetails: ((T) -> Unit)? = null,
-    responsiveConfig: ResponsiveConfig,
+    responsiveConfig: TabResponsiveConfig,
     setOpenCardId: (Any?) -> Unit
 ) {
     val subtitle = when (item) {
@@ -382,7 +382,7 @@ fun <T : ListItemUi> GenericListScreen(
     onConfirmDelete: () -> Unit,
     onDismissDelete: () -> Unit,
     getTitleForDialog: (T) -> String = { it.getTitle() },
-    responsiveConfig: ResponsiveConfig,
+    responsiveConfig: TabResponsiveConfig,
     icon: ImageVector = Icons.Default.Person
 ) {
     var openCardId by remember { mutableStateOf<Any?>(null) }
@@ -513,21 +513,21 @@ private fun SwipeActionsRow(
     showViewDebtsButton: Boolean,
     actionsWidth: Dp,
     modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .width(actionsWidth)
-            .fillMaxHeight()
-            .background(Color.White),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        ActionSquareButton(
-            modifier = Modifier
-                .width(80.dp)
-                .fillMaxHeight(),
-            icon = Icons.Default.Edit,
-            label = "Editar",
-            backgroundColor = Color(0xFFA5D6A7),
+        Row(
+        modifier = modifier
+                .width(actionsWidth)
+                .fillMaxHeight()
+                .background(Color.White),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ActionSquareButton(
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
+                icon = Icons.Default.Edit,
+                label = "Editar",
+                backgroundColor = Color(0xFFA5D6A7),
             onClick = onEdit
         )
         if (showViewDebtsButton) {
@@ -541,13 +541,13 @@ private fun SwipeActionsRow(
                 onClick = { onDetails?.invoke() }
             )
         }
-        ActionSquareButton(
-            modifier = Modifier
-                .width(80.dp)
-                .fillMaxHeight(),
-            icon = Icons.Default.Delete,
-            label = "Eliminar",
-            backgroundColor = Color(0xFFE57373),
+            ActionSquareButton(
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
+                icon = Icons.Default.Delete,
+                label = "Eliminar",
+                backgroundColor = Color(0xFFE57373),
             onClick = onDelete
         )
     }
@@ -561,21 +561,21 @@ private fun SwipeableCardContent(
     imageUri: String?,
     fontSize: TextUnit
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
             .height(70.dp)
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
+                    .background(Color.White)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
             if (!imageUri.isNullOrBlank()) {
                 coil.compose.AsyncImage(
                     model = imageUri,
@@ -584,23 +584,23 @@ private fun SwipeableCardContent(
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop
                 )
             } else {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
-                )
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
             }
-        }
-        Spacer(modifier = Modifier.width(16.dp))
+                }
+                Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = fontSize
-                ),
-                maxLines = 1,
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = fontSize
+                    ),
+                    maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             if (!subtitle.isNullOrBlank()) {
@@ -733,13 +733,13 @@ fun SwipeableClientCard(
 
 @Composable
 private fun FormTitle(title: String, subtitle: String, description: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-    )
-    Text(
-        text = subtitle,
-        style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray),
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray),
         modifier = Modifier.padding(bottom = 4.dp),
         textAlign = TextAlign.Center
     )
@@ -747,42 +747,42 @@ private fun FormTitle(title: String, subtitle: String, description: String) {
         Text(
             text = description,
             style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF7B7B7B)),
-            modifier = Modifier.padding(bottom = 12.dp),
-            textAlign = TextAlign.Center
-        )
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    textAlign = TextAlign.Center
+                )
     }
 }
 
 @Composable
 private fun FormDivider() {
-    HorizontalDivider(
-        Modifier.padding(vertical = 8.dp),
-        DividerDefaults.Thickness,
-        DividerDefaults.color
-    )
+                HorizontalDivider(
+                    Modifier.padding(vertical = 8.dp),
+                    DividerDefaults.Thickness,
+                    DividerDefaults.color
+                )
 }
 
 @Composable
 private fun FormFields(fields: List<FormFieldData>) {
-    fields.forEachIndexed { idx, field ->
-        SharedOutlinedTextField(
-            value = field.value,
-            onValueChange = field.onValueChange,
-            label = field.label,
-            placeholder = field.placeholder,
-            isError = field.isError,
-            errorMessage = field.errorMessage,
-            modifier = Modifier.fillMaxWidth(),
-            fontSize = 16.sp,
-            minHeight = 60.dp,
-            onClear = field.onClear,
-            leadingIcon = field.leadingIcon,
-            keyboardOptions = field.keyboardOptions
-        )
-        if (idx < fields.lastIndex) {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
+                fields.forEachIndexed { idx, field ->
+                    SharedOutlinedTextField(
+                        value = field.value,
+                        onValueChange = field.onValueChange,
+                        label = field.label,
+                        placeholder = field.placeholder,
+                        isError = field.isError,
+                        errorMessage = field.errorMessage,
+                        modifier = Modifier.fillMaxWidth(),
+                        fontSize = 16.sp,
+                        minHeight = 60.dp,
+                        onClear = field.onClear,
+                        leadingIcon = field.leadingIcon,
+                        keyboardOptions = field.keyboardOptions
+                    )
+                    if (idx < fields.lastIndex) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
 }
 
 @Composable
@@ -792,25 +792,25 @@ private fun FormButton(
     isLoading: Boolean,
     buttonEnabled: Boolean
 ) {
-    Button(
-        onClick = onSubmit,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(54.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = ButtonDefaults.buttonElevation(6.dp),
-        enabled = buttonEnabled && !isLoading
-    ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                color = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-        } else {
-            Icon(Icons.Default.Check, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = submitButtonText,
+                Button(
+                    onClick = onSubmit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.buttonElevation(6.dp),
+                    enabled = buttonEnabled && !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Icon(Icons.Default.Check, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = submitButtonText,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
