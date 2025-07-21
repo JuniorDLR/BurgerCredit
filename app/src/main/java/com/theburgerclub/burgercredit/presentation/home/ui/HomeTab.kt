@@ -17,17 +17,22 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.LottieConstants
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalDensity
 import com.theburgerclub.burgercredit.R
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntSize
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.theburgerclub.burgercredit.presentation.home.viewmodel.HomeViewModel
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTab() {
+fun HomeTab(viewModel: HomeViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
     val windowInfo = LocalWindowInfo.current
     val containerSize: IntSize = windowInfo.containerSize
     val density = LocalDensity.current
@@ -69,7 +74,15 @@ fun HomeTab() {
             }
 
             item {
-                HomeSummarySection(screenWidth, screenHeight)
+                HomeSummarySection(
+                    screenWidth = screenWidth,
+                    screenHeight = screenHeight,
+                    totalCustomers = uiState.totalCustomers,
+                    totalActiveDebts = uiState.totalActiveDebts,
+                    totalCustomersWithActiveDebt = uiState.totalCustomersWithActiveDebt,
+                    totalPendingAmount = uiState.totalPendingAmount,
+                    topClients = uiState.topClients
+                )
             }
         }
     }
@@ -175,7 +188,15 @@ fun HomeBanner(screenWidth: Float, screenHeight: Float) {
 }
 
 @Composable
-fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
+fun HomeSummarySection(
+    screenWidth: Float,
+    screenHeight: Float,
+    totalCustomers: Int,
+    totalActiveDebts: Int,
+    totalCustomersWithActiveDebt: Int,
+    totalPendingAmount: Double,
+    topClients: List<String>
+) {
     // Responsive sizing
     val spacing = when {
         screenWidth < 320 -> 12.dp  // Very small screens
@@ -213,8 +234,8 @@ fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
             ) {
                 SummaryCard(
                     title = "Total Outstanding Debt",
-                    value = "$5,400",
-                    subtitle = "+$320 this month",
+                    value = "$${"%.2f".format(totalPendingAmount)}",
+                    subtitle = "With active debts: $totalCustomersWithActiveDebt",
                     modifier = Modifier.weight(1f),
                     isPositive = true,
                     screenWidth = screenWidth,
@@ -223,8 +244,8 @@ fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
 
                 SummaryCard(
                     title = "Total Customers",
-                    value = "120",
-                    subtitle = "With active debts",
+                    value = totalCustomers.toString(),
+                    subtitle = "With active debts: $totalCustomersWithActiveDebt",
                     modifier = Modifier.weight(1f),
                     screenWidth = screenWidth,
                     screenHeight = screenHeight
@@ -232,7 +253,7 @@ fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
 
                 SummaryCard(
                     title = "Active Debts",
-                    value = "150",
+                    value = totalActiveDebts.toString(),
                     subtitle = "Pending payments",
                     modifier = Modifier.weight(1f),
                     screenWidth = screenWidth,
@@ -248,8 +269,8 @@ fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
             ) {
                 SummaryCard(
                     title = "Total Outstanding Debt",
-                    value = "$5,400",
-                    subtitle = "+$320 this month",
+                    value = "$${"%.2f".format(totalPendingAmount)}",
+                    subtitle = "With active debts: $totalCustomersWithActiveDebt",
                     modifier = Modifier.weight(1f),
                     isPositive = true,
                     screenWidth = screenWidth,
@@ -258,8 +279,8 @@ fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
 
                 SummaryCard(
                     title = "Total Customers",
-                    value = "120",
-                    subtitle = "With active debts",
+                    value = totalCustomers.toString(),
+                    subtitle = "With active debts: $totalCustomersWithActiveDebt",
                     modifier = Modifier.weight(1f),
                     screenWidth = screenWidth,
                     screenHeight = screenHeight
@@ -270,9 +291,8 @@ fun HomeSummarySection(screenWidth: Float, screenHeight: Float) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(cardSpacing)
             ) {
-                val topClients = emptyList<String>() // tu lógica real
                 ActiveDebtsCard(
-                    activeDebts = "150",
+                    activeDebts = totalActiveDebts.toString(),
                     subtitle = "Pending payments",
                     topClients = topClients,
                     modifier = Modifier.fillMaxWidth()
