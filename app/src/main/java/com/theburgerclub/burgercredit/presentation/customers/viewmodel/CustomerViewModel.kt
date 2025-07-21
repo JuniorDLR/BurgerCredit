@@ -23,7 +23,7 @@ class CustomerViewModel @Inject constructor(
 
     private val _customerUiState = MutableStateFlow(CustomerUiState())
     val customerUiState: StateFlow<CustomerUiState> = _customerUiState.asStateFlow()
-    
+
     private var searchJob: Job? = null
 
     init {
@@ -38,7 +38,7 @@ class CustomerViewModel @Inject constructor(
         }
     }
 
-    fun addCustomer(customer: Customer) {
+    private fun addCustomer(customer: Customer) {
         viewModelScope.launch {
             customerUseCase.addCustomer(customer)
             loadCustomers()
@@ -80,7 +80,7 @@ class CustomerViewModel @Inject constructor(
     }
 
     fun clearCustomerInput() {
-        _customerUiState.update { 
+        _customerUiState.update {
             it.copy(
                 customerInput = "",
                 lastNameInput = "",
@@ -92,7 +92,7 @@ class CustomerViewModel @Inject constructor(
     }
 
     fun clearErrors() {
-        _customerUiState.update { 
+        _customerUiState.update {
             it.copy(
                 customerInputError = null,
                 lastNameInputError = null,
@@ -103,13 +103,13 @@ class CustomerViewModel @Inject constructor(
 
     fun updateSearchQuery(query: String) {
         _customerUiState.update { it.copy(searchQuery = query) }
-        
+
         // Cancelar búsqueda anterior si existe
         searchJob?.cancel()
-        
+
         if (query.isBlank()) {
             // Si la búsqueda está vacía, mostrar todos los clientes
-            _customerUiState.update { 
+            _customerUiState.update {
                 it.copy(
                     searchResults = emptyList(),
                     isSearching = false
@@ -126,20 +126,20 @@ class CustomerViewModel @Inject constructor(
 
     private suspend fun searchCustomers(query: String) {
         _customerUiState.update { it.copy(isSearching = true) }
-        
+
         // Pequeño delay para que se vea el loading
         delay(500)
-        
+
         try {
             val customers = customerUseCase.searchCustomersByName(query).first()
-            _customerUiState.update { 
+            _customerUiState.update {
                 it.copy(
                     searchResults = customers,
                     isSearching = false
                 )
             }
         } catch (e: Exception) {
-            _customerUiState.update { 
+            _customerUiState.update {
                 it.copy(
                     searchResults = emptyList(),
                     isSearching = false
@@ -149,7 +149,7 @@ class CustomerViewModel @Inject constructor(
     }
 
     fun clearSearch() {
-        _customerUiState.update { 
+        _customerUiState.update {
             it.copy(
                 searchQuery = "",
                 searchResults = emptyList(),
@@ -161,9 +161,9 @@ class CustomerViewModel @Inject constructor(
     suspend fun validateAndAddCustomer(): Boolean {
         val name = customerUiState.value.customerInput
         val lastName = customerUiState.value.lastNameInput
-        
+
         var hasErrors = false
-        
+
         // Validar nombre
         if (name.isBlank()) {
             _customerUiState.update { it.copy(customerInputError = "Name cannot be empty") }
@@ -171,7 +171,7 @@ class CustomerViewModel @Inject constructor(
         } else {
             _customerUiState.update { it.copy(customerInputError = null) }
         }
-        
+
         // Validar apellido
         if (lastName.isBlank()) {
             _customerUiState.update { it.copy(lastNameInputError = "Last name cannot be empty") }
@@ -179,23 +179,26 @@ class CustomerViewModel @Inject constructor(
         } else {
             _customerUiState.update { it.copy(lastNameInputError = null) }
         }
-        
+
         // Si hay errores, no continuar
         if (hasErrors) {
             return false
         }
-        
+
         // Activar loading
         _customerUiState.update { it.copy(isLoading = true) }
-        
+
         try {
             // Pequeño delay para que se vea el loading
             delay(1000)
-            
+
             // Verificar si ya existe un cliente con el mismo nombre y apellido (case-insensitive)
-            val existingCustomer = customerUseCase.getCustomerByNameAndLastName(name.lowercase(), lastName.lowercase())
+            val existingCustomer = customerUseCase.getCustomerByNameAndLastName(
+                name.lowercase().trim(),
+                lastName.lowercase().trim()
+            )
             if (existingCustomer != null) {
-                _customerUiState.update { 
+                _customerUiState.update {
                     it.copy(
                         isLoading = false,
                         customerInputError = "A customer with this name and last name already exists"
@@ -203,14 +206,14 @@ class CustomerViewModel @Inject constructor(
                 }
                 return false
             }
-            
+
             // Si no existe, agregar el cliente
-            customerUseCase.addCustomer(Customer(name = name, lastName = lastName))
+            addCustomer(Customer(name = name, lastName = lastName))
             clearCustomerInput()
             _customerUiState.update { it.copy(isLoading = false) }
             return true
         } catch (e: Exception) {
-            _customerUiState.update { 
+            _customerUiState.update {
                 it.copy(
                     isLoading = false,
                     customerInputError = e.message ?: "Unknown error"

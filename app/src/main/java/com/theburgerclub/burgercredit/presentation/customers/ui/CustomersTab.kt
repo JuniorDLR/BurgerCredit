@@ -57,6 +57,19 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.theburgerclub.burgercredit.presentation.customers.model.getFullName
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
 
 
 @Composable
@@ -71,6 +84,94 @@ fun CustomersTab() {
 
 
 @Composable
+fun DeleteCustomerDialog(
+    customerName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0x99000000)) // Fondo semi-transparente
+    ) {
+        Box(
+            contentAlignment = Alignment.TopCenter,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        ) {
+            // Card principal
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 40.dp)
+                    .border(width = 1.dp, Color(0xFFE57373), shape =  RoundedCornerShape(20.dp)), // Espacio para el icono
+                elevation = CardDefaults.cardElevation(8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 48.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
+                ) {
+                    Text(
+                        "Confirmar eliminación",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = buildAnnotatedString {
+                            append("¿Estás seguro de que deseas eliminar a \"")
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(customerName)
+                            }
+                            append("\"? Esta acción no se puede deshacer.")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 24.dp),
+                        textAlign = TextAlign.Center
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Cancelar")
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Button(
+                            onClick = onConfirm,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Eliminar", color = Color.White)
+                        }
+                    }
+                }
+            }
+            // Icono de basura sobresaliente
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .offset(y = (-10).dp)
+                    .background(Color.White, shape = CircleShape)
+                    .border(2.dp, Color(0xFFE57373), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = Color(0xFFE57373),
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = hiltViewModel()) {
     val uiState by viewModel.customerUiState.collectAsState()
     val context = LocalContext.current
@@ -78,6 +179,9 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
     val isLandscape = screenWidth > screenHeight
+
+    // Estado para el cliente a eliminar
+    var clientToDelete by remember { mutableStateOf<Client?>(null) }
 
     // Responsive paddings y tamaños
     val horizontalPadding = when {
@@ -152,7 +256,7 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
                         fontSize = fontSize
                     )
                 },
-                leadingIcon = { 
+                leadingIcon = {
                     if (uiState.isSearching) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
@@ -189,15 +293,26 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
             clients = displayClients,
             onEdit = { },
             onDelete = { client ->
-                val customer = getCustomerByName(client.name)
-                if (customer != null) {
-                    viewModel.deleteCustomer(customer)
-                    Toast.makeText(context, "Customer deleted successfully!", Toast.LENGTH_SHORT)
-                        .show()
-                }
+                clientToDelete = client // Solo abre el diálogo
             },
             cardHeight = cardHeight,
             fontSize = fontSize
+        )
+    }
+
+    // Usar el nuevo diálogo personalizado
+    if (clientToDelete != null) {
+        DeleteCustomerDialog(
+            customerName = clientToDelete!!.getFullName(),
+            onConfirm = {
+                val customer = getCustomerByName(clientToDelete!!.name)
+                if (customer != null) {
+                    viewModel.deleteCustomer(customer)
+                    Toast.makeText(context, "Cliente eliminado correctamente", Toast.LENGTH_SHORT).show()
+                }
+                clientToDelete = null
+            },
+            onDismiss = { clientToDelete = null }
         )
     }
 }
@@ -254,7 +369,7 @@ fun SwipeableClientCard(
     fontSize: androidx.compose.ui.unit.TextUnit = 16.sp
 ) {
     val buttonWidth = 80.dp
-    val actionsWidth = buttonWidth * 2
+    val actionsWidth = buttonWidth * 3 // Ahora hay 3 botones
     val density = LocalDensity.current
     val maxSwipe = with(density) { actionsWidth.toPx() }
     val swipeOffset = remember { Animatable(0f) }
@@ -269,7 +384,7 @@ fun SwipeableClientCard(
         // Fondo de acciones SOLO del ancho de los botones
         Row(
             modifier = Modifier
-                .width(actionsWidth)
+                .width(actionsWidth) // Ajustar ancho para 3 botones
                 .fillMaxHeight()
                 .align(Alignment.CenterEnd)
                 .background(Color.White),
@@ -294,6 +409,21 @@ fun SwipeableClientCard(
                 modifier = Modifier
                     .width(80.dp)
                     .fillMaxHeight(),
+                icon = Icons.Default.Info, // Usar un icono de información
+                label = "Detalles",
+                backgroundColor = Color(0xFF90CAF9),
+                onClick = {
+                    // Acción de detalles (por ahora vacío)
+                    scope.launch {
+                        swipeOffset.animateTo(0f, tween(300))
+                        isRevealed = false
+                    }
+                }
+            )
+            ActionSquareButton(
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
                 icon = Icons.Default.Delete,
                 label = "Eliminar",
                 backgroundColor = Color(0xFFE57373),
@@ -305,6 +435,7 @@ fun SwipeableClientCard(
                     }
                 }
             )
+
         }
         // Card deslizable (sin fondo ni borde extra)
         Box(
