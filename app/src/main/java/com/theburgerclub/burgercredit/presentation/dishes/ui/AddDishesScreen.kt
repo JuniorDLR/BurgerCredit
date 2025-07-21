@@ -110,8 +110,7 @@ fun AddDishesScreen(
             ),
             onSubmit = {
                 scope.launch {
-                    val success =
-                        if (isEdit) viewModel.validateAndUpdateDish() else viewModel.validateAndAddDish()
+                    val success = if (isEdit) viewModel.validateAndUpdateDish() else viewModel.validateAndAddDish()
                     if (success) {
                         Toast.makeText(
                             context,
@@ -124,6 +123,7 @@ fun AddDishesScreen(
             },
             submitButtonText = if (isEdit) "Save Changes" else "Save Dish",
             isLoading = uiState.isLoading,
+            enabled = uiState.stepImageState != StepImageState.LOADING,
             topContent = {
                 Icon(
                     imageVector = Icons.Default.Fastfood,

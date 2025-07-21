@@ -160,17 +160,23 @@ class DishViewModel @Inject constructor(
             return false
         }
         _dishUiState.update { it.copy(isLoading = true) }
-        addDish(Dish(name = name, price = price!!, photoUri = photoUri))
-        _dishUiState.update {
-            it.copy(
-                dishNameInput = "",
-                priceInput = "",
-                isLoading = false,
-                imageUri = null,
-                stepImageState = StepImageState.NONE
-            )
+        try {
+          delay(1000)
+            addDish(Dish(name = name, price = price!!, photoUri = photoUri))
+            _dishUiState.update {
+                it.copy(
+                    dishNameInput = "",
+                    priceInput = "",
+                    isLoading = false,
+                    imageUri = null,
+                    stepImageState = StepImageState.NONE
+                )
+            }
+            return true
+        } catch (e: Exception) {
+            _dishUiState.update { it.copy(isLoading = false) }
+            return false
         }
-        return true
     }
 
     fun startEditDish(dish: Dish) {
@@ -225,11 +231,17 @@ class DishViewModel @Inject constructor(
             return false
         }
         _dishUiState.update { it.copy(isLoading = true) }
-        if (selected != null) {
-            updateDish(selected.copy(name = name, price = price!!, photoUri = photoUri))
+        try {
+           delay(1000)
+            if (selected != null) {
+                updateDish(selected.copy(name = name, price = price!!, photoUri = photoUri))
+            }
+            _dishUiState.update { it.copy(isLoading = false) }
+            return true
+        } catch (e: Exception) {
+            _dishUiState.update { it.copy(isLoading = false) }
+            return false
         }
-        _dishUiState.update { it.copy(isLoading = false) }
-        return true
     }
 
     suspend fun loadDishById(dishId: Long) {

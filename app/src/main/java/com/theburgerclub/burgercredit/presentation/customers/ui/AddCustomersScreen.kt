@@ -1,5 +1,6 @@
 package com.theburgerclub.burgercredit.presentation.customers.ui
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,10 +22,12 @@ import com.theburgerclub.burgercredit.presentation.shared.GenericFormScreen
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
 import com.theburgerclub.burgercredit.presentation.customers.model.CustomerUiState
+import com.theburgerclub.burgercredit.presentation.shared.model.FormResponsiveConfig
+import com.theburgerclub.burgercredit.presentation.shared.model.rememberFormResponsiveConfig
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
- fun addCustomerFormFields(
+fun addCustomerFormFields(
     uiState: CustomerUiState,
     viewModel: CustomerViewModel
 ): List<FormFieldData> = listOf(
@@ -71,9 +74,9 @@ private fun AddCustomerForm(
     uiState: CustomerUiState,
     viewModel: CustomerViewModel,
     navController: NavController,
-    responsiveConfig: com.theburgerclub.burgercredit.presentation.shared.model.FormResponsiveConfig,
+    responsiveConfig: FormResponsiveConfig,
     isEdit: Boolean,
-    context: android.content.Context,
+    context: Context,
     scope: CoroutineScope,
     modifier: Modifier = Modifier
 ) {
@@ -95,7 +98,8 @@ private fun AddCustomerForm(
                 } else {
                     val success = viewModel.validateAndAddCustomer()
                     if (success) {
-                        Toast.makeText(context, "Customer saved successfully!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Customer saved successfully!", Toast.LENGTH_SHORT)
+                            .show()
                         navController.popBackStack()
                     }
                 }
@@ -125,7 +129,7 @@ fun AddCustomersScreen(
     val uiState by viewModel.customerUiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val responsiveConfig = com.theburgerclub.burgercredit.presentation.shared.model.rememberFormResponsiveConfig()
+    val responsiveConfig = rememberFormResponsiveConfig()
 
     // Esperar a que el cliente esté disponible si es edición
     LaunchedEffect(customerId, uiState.customers) {
