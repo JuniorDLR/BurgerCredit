@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.theburgerclub.burgercredit.presentation.customers.model.getFullName
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
@@ -66,19 +65,20 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.border
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.navigation.NavController
 
 
 @Composable
-fun CustomersTab() {
+fun CustomersTab(navController: NavController) {
     Scaffold(
         topBar = { TopAppBarShared(nameTopBar = "Managing Clients") },
         floatingActionButtonPosition = androidx.compose.material3.FabPosition.End
     ) { innerPadding ->
-        CustomersBody(Modifier.padding(innerPadding))
+        CustomersBody(Modifier.padding(innerPadding), navController = navController)
     }
 }
 
@@ -172,7 +172,7 @@ fun DeleteCustomerDialog(
 }
 
 @Composable
-fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = hiltViewModel()) {
+fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = hiltViewModel(), navController: NavController? = null) {
     val uiState by viewModel.customerUiState.collectAsState()
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -291,7 +291,12 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
         }
         ClientList(
             clients = displayClients,
-            onEdit = { },
+            onEdit = { client ->
+                val customer = getCustomerByName(client.name)
+                if (customer != null && navController != null) {
+                    navController.navigate("editCustomer/${customer.id}")
+                }
+            },
             onDelete = { client ->
                 clientToDelete = client // Solo abre el diálogo
             },
@@ -353,7 +358,10 @@ fun ClientCard(
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
                 fontSize = fontSize
-            )
+            ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
         )
     }
 }

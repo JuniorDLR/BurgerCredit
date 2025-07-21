@@ -12,5 +12,6 @@ data class CustomerUiState(
     val isLoading: Boolean = false,
     val searchQuery: String = "",
     val isSearching: Boolean = false,
-    val searchResults: List<Customer> = emptyList()
+    val searchResults: List<Customer> = emptyList(),
+    val isEdit: Boolean = false
 ) 

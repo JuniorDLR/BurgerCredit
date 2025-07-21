@@ -17,6 +17,8 @@ import com.theburgerclub.burgercredit.presentation.login.ui.SignUpScreen
 import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 import com.theburgerclub.burgercredit.presentation.theme.BurgerCreditTheme
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -43,6 +45,13 @@ fun AppNavGraph() {
         composable(route = AppRoute.RegisterScreen.route) { SignUpScreen(navController) }
         composable(route = AppRoute.HomeScreen.route) { MainScreen(navController) }
         composable(route = AppRoute.AddCustomerScreen.route) { AddCustomersScreen(navController) }
+        composable(
+            route = AppRoute.EditCustomerScreen.route,
+            arguments = listOf(navArgument("customerId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val customerId = backStackEntry.arguments?.getLong("customerId")
+            AddCustomersScreen(navController = navController, customerId = customerId)
+        }
         // composable(AppRoute.CustomerScreen.route) { ... }
         // composable(AppRoute.EditCustomerScreen.route) { ... }
         // composable(AppRoute.DishesScreen.route) { ... }

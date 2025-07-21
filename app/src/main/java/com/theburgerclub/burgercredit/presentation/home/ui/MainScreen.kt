@@ -62,7 +62,8 @@ fun MainScreen(
     ) { paddingValues ->
         MainContent(
             selectedTab = uiState.selectedTab,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            navController = navController
         )
     }
 }
@@ -229,12 +230,19 @@ fun HomeNavigationIcon(
 @Composable
 fun MainContent(
     selectedTab: HomeTab,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController? = null
 ) {
     when (selectedTab) {
         HomeTab.HOME -> HomeTab()
-        HomeTab.CUSTOMERS -> CustomersTab()
+        HomeTab.CUSTOMERS -> if (navController != null) CustomersTab(navController) else CustomersTabPlaceholder()
         HomeTab.DISHES -> DishesTab()
         HomeTab.DEBTS -> DebtsTab()
     }
+}
+
+@Composable
+fun CustomersTabPlaceholder() {
+    // Placeholder en caso de que navController no esté disponible
+    Text("Customers")
 }

@@ -3,8 +3,6 @@ package com.theburgerclub.burgercredit.presentation.customers.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
-import com.theburgerclub.burgercredit.presentation.theme.LoginColors
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.theburgerclub.burgercredit.presentation.customers.viewmodel.CustomerViewModel
 import androidx.compose.runtime.rememberCoroutineScope
@@ -23,19 +20,50 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
-import com.theburgerclub.burgercredit.domain.model.Customer
+
 import androidx.compose.ui.platform.LocalConfiguration
 import com.theburgerclub.burgercredit.presentation.shared.SharedOutlinedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewModel = hiltViewModel()) {
+fun AddCustomersScreen(
+    navController: NavController,
+    customerId: Long? = null,
+    viewModel: CustomerViewModel = hiltViewModel()
+) {
     val uiState by viewModel.customerUiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val screenHeight = configuration.screenHeightDp
+
+    // Esperar a que el cliente esté disponible si es edición
+    LaunchedEffect(customerId, uiState.customers) {
+        if (customerId != null && !uiState.isEdit) {
+            val customer = uiState.customers.find { it.id == customerId }
+            if (customer != null) {
+                viewModel.startEditCustomer(customer)
+            }
+        }
+    }
+
+    // Si es edición y el cliente aún no está cargado, mostrar loader
+    if (customerId != null && (uiState.selectedCustomer == null || !uiState.isEdit)) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    // Precargar datos si es edición
+    LaunchedEffect(uiState.isEdit, uiState.selectedCustomer) {
+        val customer = uiState.selectedCustomer
+        if (uiState.isEdit && customer != null) {
+            viewModel.onCustomerInputChange(customer.name)
+            viewModel.onLastNameInputChange(customer.lastName)
+        }
+    }
 
     // Responsive paddings y tamaños
     val horizontalPadding = when {
@@ -70,12 +98,21 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
         else -> 16.sp
     }
 
+    val topBarTitle = if (uiState.isEdit) {
+        "Edit Customer"
+    } else {
+        "Add Customer"
+    }
+
     Scaffold(
         topBar = {
             TopAppBarShared(
-                nameTopBar = "Add Customer",
+                nameTopBar = topBarTitle,
                 showNavigationIcon = true,
-                onNavigationClick = { navController.popBackStack() }
+                onNavigationClick = {
+                    viewModel.exitEditMode()
+                    navController.popBackStack()
+                }
             )
         }
     ) { innerPadding ->
@@ -94,7 +131,7 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
             ) {
                 SharedOutlinedTextField(
                     value = uiState.customerInput,
-                    onValueChange = { 
+                    onValueChange = {
                         viewModel.onCustomerInputChange(it)
                         if (uiState.customerInputError != null) {
                             viewModel.clearErrors()
@@ -113,7 +150,7 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
 
                 SharedOutlinedTextField(
                     value = uiState.lastNameInput,
-                    onValueChange = { 
+                    onValueChange = {
                         viewModel.onLastNameInputChange(it)
                         if (uiState.lastNameInputError != null) {
                             viewModel.clearErrors()
@@ -131,10 +168,19 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                 Button(
                     onClick = {
                         scope.launch {
-                            val success = viewModel.validateAndAddCustomer()
-                            if (success) {
-                                Toast.makeText(context, "Customer saved successfully!", Toast.LENGTH_SHORT).show()
-                                navController.popBackStack()
+                            if (uiState.isEdit && uiState.selectedCustomer != null) {
+                                val success = viewModel.validateAndUpdateCustomer()
+                                if (success) {
+                                    Toast.makeText(context, "Changes saved", Toast.LENGTH_SHORT).show()
+                                    viewModel.exitEditMode()
+                                    navController.popBackStack()
+                                }
+                            } else {
+                                val success = viewModel.validateAndAddCustomer()
+                                if (success) {
+                                    Toast.makeText(context, "Customer saved successfully!", Toast.LENGTH_SHORT).show()
+                                    navController.popBackStack()
+                                }
                             }
                         }
                     },
@@ -151,7 +197,7 @@ fun AddCustomersScreen(navController: NavController, viewModel: CustomerViewMode
                         )
                     } else {
                         Text(
-                            text = "Save",
+                            text = if (uiState.isEdit) "Guardar Cambios" else "Save",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = fontSize)
                         )
                     }
