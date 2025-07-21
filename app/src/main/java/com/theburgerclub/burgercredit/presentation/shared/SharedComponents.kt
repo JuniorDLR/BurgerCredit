@@ -37,6 +37,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -50,6 +51,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.theburgerclub.burgercredit.presentation.theme.LoginColors
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Badge
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -196,7 +200,9 @@ fun SharedOutlinedTextField(
     errorMessage: String? = null,
     modifier: Modifier = Modifier,
     fontSize: TextUnit = 16.sp,
-    minHeight: Dp = 60.dp
+    minHeight: Dp = 60.dp,
+    onClear: (() -> Unit)? = null,
+    leadingIcon: ImageVector? = null
 ) {
     Column {
         OutlinedTextField(
@@ -207,6 +213,19 @@ fun SharedOutlinedTextField(
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             isError = isError,
+            leadingIcon = if (leadingIcon != null) {
+                { Icon(imageVector = leadingIcon, contentDescription = null, tint = if (isError) Color.Red else MaterialTheme.colorScheme.primary) }
+            } else null,
+            trailingIcon = {
+                if (onClear != null && value.isNotEmpty()) {
+                    IconButton(onClick = onClear) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Clear"
+                        )
+                    }
+                }
+            },
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = LoginColors.inputBackground,
                 focusedContainerColor = LoginColors.inputBackground,
@@ -220,7 +239,9 @@ fun SharedOutlinedTextField(
                 disabledTextColor = LoginColors.inputIcon,
                 focusedPlaceholderColor = LoginColors.inputIcon,
                 unfocusedPlaceholderColor = LoginColors.inputIcon,
-                disabledPlaceholderColor = LoginColors.inputIcon
+                disabledPlaceholderColor = LoginColors.inputIcon,
+                focusedLabelColor = if (isError) Color.Red else MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = if (isError) Color.Red else MaterialTheme.colorScheme.primary
             ),
             modifier = modifier
                 .fillMaxWidth()
