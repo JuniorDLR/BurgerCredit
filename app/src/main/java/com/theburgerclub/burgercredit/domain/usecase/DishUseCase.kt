@@ -26,6 +26,10 @@ class DishUseCase @Inject constructor(
     suspend fun getDishById(id: Long): Dish? =
         repository.getDishById(id)?.toDomain()
 
+    suspend fun getDishByName(name: String): Dish? {
+        return repository.getDishByName(name)?.toDomain()
+    }
+
     fun searchDishesByName(name: String): Flow<List<Dish>> =
         repository.searchDishesByName(name).map { list -> list.map { it.toDomain() } }
 } 

@@ -10,7 +10,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.theburgerclub.burgercredit.presentation.customers.ui.AddCustomersScreen
-
 import com.theburgerclub.burgercredit.presentation.home.ui.MainScreen
 import com.theburgerclub.burgercredit.presentation.login.ui.LoginScreen
 import com.theburgerclub.burgercredit.presentation.login.ui.SignUpScreen
@@ -19,6 +18,7 @@ import com.theburgerclub.burgercredit.presentation.theme.BurgerCreditTheme
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.theburgerclub.burgercredit.presentation.dishes.ui.AddDishesScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -45,6 +45,14 @@ fun AppNavGraph() {
         composable(route = AppRoute.RegisterScreen.route) { SignUpScreen(navController) }
         composable(route = AppRoute.HomeScreen.route) { MainScreen(navController) }
         composable(route = AppRoute.AddCustomerScreen.route) { AddCustomersScreen(navController) }
+        composable(route = AppRoute.AddDishScreen.route) { AddDishesScreen(navController) }
+        composable(
+            route = AppRoute.EditDishScreen.route,
+            arguments = listOf(navArgument("dishId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val dishId = backStackEntry.arguments?.getLong("dishId")
+            AddDishesScreen(navController = navController, dishId = dishId)
+        }
         composable(
             route = AppRoute.EditCustomerScreen.route,
             arguments = listOf(navArgument("customerId") { type = NavType.LongType })
@@ -52,11 +60,6 @@ fun AppNavGraph() {
             val customerId = backStackEntry.arguments?.getLong("customerId")
             AddCustomersScreen(navController = navController, customerId = customerId)
         }
-        // composable(AppRoute.CustomerScreen.route) { ... }
-        // composable(AppRoute.EditCustomerScreen.route) { ... }
-        // composable(AppRoute.DishesScreen.route) { ... }
-        // composable(AppRoute.EditDishScreen.route) { ... }
-        // composable(AppRoute.DebtScreen.route) { ... }
-        // composable(AppRoute.EditDebtScreen.route) { ... }
+
     }
 }

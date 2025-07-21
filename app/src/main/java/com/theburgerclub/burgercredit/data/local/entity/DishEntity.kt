@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class DishEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val price: Double
+    val price: Double,
+    val photoUri: String? = null
 ) 

@@ -27,4 +27,7 @@ class DishRepository @Inject constructor(
 
     fun searchDishesByName(name: String): Flow<List<DishEntity>> =
         dishDao.searchDishesByName(name)
+
+    suspend fun getDishByName(name: String): DishEntity? =
+        dishDao.getDishByName(name)
 } 

@@ -2,7 +2,6 @@ package com.theburgerclub.burgercredit.data.local.dao
 
 import androidx.room.*
 import com.theburgerclub.burgercredit.data.local.entity.AdminEntity
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AdminDao {

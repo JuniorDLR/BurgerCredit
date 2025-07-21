@@ -29,4 +29,8 @@ interface DishDao {
     // Buscar platos por nombre
     @Query("SELECT * FROM dishes WHERE name LIKE '%' || :name || '%' ORDER BY name ASC")
     fun searchDishesByName(name: String): Flow<List<DishEntity>>
+
+    // Obtener un plato por nombre exacto (case-insensitive)
+    @Query("SELECT * FROM dishes WHERE LOWER(TRIM(name)) = LOWER(TRIM(:name)) LIMIT 1")
+    suspend fun getDishByName(name: String): DishEntity?
 } 

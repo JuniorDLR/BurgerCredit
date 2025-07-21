@@ -8,12 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +49,6 @@ import androidx.compose.runtime.collectAsState
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.theburgerclub.burgercredit.domain.model.Customer
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.theburgerclub.burgercredit.presentation.customers.model.getFullName
@@ -65,18 +60,23 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.border
+import androidx.compose.material3.FabPosition
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.navigation.NavController
+import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
+import com.theburgerclub.burgercredit.presentation.shared.GenericListScreen
+import com.theburgerclub.burgercredit.presentation.shared.model.rememberResponsiveConfig
 
 
 @Composable
 fun CustomersTab(navController: NavController) {
     Scaffold(
         topBar = { TopAppBarShared(nameTopBar = "Managing Clients") },
-        floatingActionButtonPosition = androidx.compose.material3.FabPosition.End
+        floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         CustomersBody(Modifier.padding(innerPadding), navController = navController)
     }
@@ -171,56 +171,13 @@ fun DeleteCustomerDialog(
     }
 }
 
+
 @Composable
 fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = hiltViewModel(), navController: NavController? = null) {
     val uiState by viewModel.customerUiState.collectAsState()
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    val screenHeight = configuration.screenHeightDp
-    val isLandscape = screenWidth > screenHeight
-
     // Estado para el cliente a eliminar
     var clientToDelete by remember { mutableStateOf<Client?>(null) }
-
-    // Responsive paddings y tamaños
-    val horizontalPadding = when {
-        screenWidth < 320 -> 8.dp
-        screenWidth < 480 -> 16.dp
-        screenWidth > 720 -> 48.dp
-        else -> 20.dp
-    }
-    val verticalPadding = when {
-        isLandscape -> 8.dp
-        screenHeight < 600 -> 8.dp
-        screenHeight < 800 -> 16.dp
-        screenWidth > 720 -> 32.dp
-        else -> 20.dp
-    }
-    val searchFieldHeight = when {
-        isLandscape -> 56.dp
-        screenHeight < 600 -> 48.dp
-        else -> 52.dp
-    }
-    val cardHeight = when {
-        screenHeight < 600 -> 56.dp
-        screenHeight < 800 -> 64.dp
-        else -> 70.dp
-    }
-    val fontSize = when {
-        screenWidth < 320 -> 13.sp
-        screenWidth < 480 -> 15.sp
-        screenWidth > 720 -> 20.sp
-        else -> 16.sp
-    }
-    val titleFontSize = when {
-        isLandscape -> 16.sp  // Tamaño específico para títulos en landscape
-        screenWidth < 320 -> 14.sp
-        screenWidth < 480 -> 16.sp
-        screenWidth > 720 -> 22.sp
-        else -> 18.sp
-    }
-
     val clients = uiState.customers.map {
         Client(
             name = it.name,
@@ -228,8 +185,6 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
             icon = Icons.Default.Person
         )
     }
-
-    // Usar searchResults si hay búsqueda, sino usar todos los clientes
     val displayClients = if (uiState.searchQuery.isNotBlank()) {
         uiState.searchResults.map {
             Client(
@@ -241,85 +196,40 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
     } else {
         clients
     }
-
     fun getCustomerByName(name: String): Customer? = uiState.customers.find { it.name == name }
-
-    Column(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(horizontal = horizontalPadding)) {
-            OutlinedTextField(
-                value = uiState.searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
-                placeholder = {
-                    Text(
-                        "Search clients",
-                        color = Color(0xFFB0B0B0),
-                        fontSize = fontSize
-                    )
-                },
-                leadingIcon = {
-                    if (uiState.isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = verticalPadding)
-                    .height(searchFieldHeight),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedContainerColor = Color(0xFFF7F7F9),
-                    focusedContainerColor = Color(0xFFF7F7F9),
-                    cursorColor = MaterialTheme.colorScheme.primary
-                )
-            )
-            Text(
-                text = if (uiState.searchQuery.isNotBlank()) "Search Results" else "Existing Clients",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = titleFontSize
-                ),
-                modifier = Modifier.padding(vertical = verticalPadding)
-            )
-        }
-        ClientList(
-            clients = displayClients,
-            onEdit = { client ->
-                val customer = getCustomerByName(client.name)
-                if (customer != null && navController != null) {
-                    navController.navigate("editCustomer/${customer.id}")
-                }
-            },
-            onDelete = { client ->
-                clientToDelete = client // Solo abre el diálogo
-            },
-            cardHeight = cardHeight,
-            fontSize = fontSize
-        )
-    }
-
-    // Usar el nuevo diálogo personalizado
-    if (clientToDelete != null) {
-        DeleteCustomerDialog(
-            customerName = clientToDelete!!.getFullName(),
-            onConfirm = {
-                val customer = getCustomerByName(clientToDelete!!.name)
-                if (customer != null) {
-                    viewModel.deleteCustomer(customer)
-                    Toast.makeText(context, "Cliente eliminado correctamente", Toast.LENGTH_SHORT).show()
-                }
-                clientToDelete = null
-            },
-            onDismiss = { clientToDelete = null }
-        )
-    }
+    GenericListScreen(
+        modifier = modifier,
+        title = if (uiState.searchQuery.isNotBlank()) "Search Results" else "Existing Clients",
+        searchPlaceholder = "Search clients",
+        searchQuery = uiState.searchQuery,
+        isSearching = uiState.isSearching,
+        onSearchQueryChange = { viewModel.updateSearchQuery(it) },
+        items = displayClients.map { ClientListItem(it) },
+        onEdit = { item ->
+            val customer = getCustomerByName(item.client.name)
+            if (customer != null && navController != null) {
+                navController.navigate("editCustomer/${customer.id}")
+            }
+        },
+        onDelete = { item -> clientToDelete = item.client },
+        onDetails = null, // Puedes implementar detalles si lo deseas
+        emptyMessage = "No clients registered yet",
+        emptySubMessage = "Tap the + button to add your first client!",
+        showDeleteDialog = clientToDelete != null,
+        itemToDelete = clientToDelete?.let { ClientListItem(it) },
+        onConfirmDelete = {
+            val customer = getCustomerByName(clientToDelete!!.name)
+            if (customer != null) {
+                viewModel.deleteCustomer(customer)
+                Toast.makeText(context, "Customer deleted successfully", Toast.LENGTH_SHORT).show()
+            }
+            clientToDelete = null
+        },
+        onDismissDelete = { clientToDelete = null },
+        getTitleForDialog = { it.client.getFullName() },
+        icon = Icons.Default.Person,
+        responsiveConfig = rememberResponsiveConfig()
+    )
 }
 
 @Composable
@@ -328,7 +238,7 @@ fun ClientCard(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     cardHeight: Dp = 70.dp,
-    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp
+    fontSize: TextUnit = 16.sp
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -373,26 +283,25 @@ fun SwipeableClientCard(
     icon: ImageVector,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onDetails: (() -> Unit)? = null,
     cardHeight: Dp = 70.dp,
-    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp
+    fontSize: TextUnit = 16.sp
 ) {
     val buttonWidth = 80.dp
-    val actionsWidth = buttonWidth * 3 // Ahora hay 3 botones
+    val actionsWidth = buttonWidth * 3
     val density = LocalDensity.current
     val maxSwipe = with(density) { actionsWidth.toPx() }
     val swipeOffset = remember { Animatable(0f) }
     var isRevealed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(cardHeight)
     ) {
-        // Fondo de acciones SOLO del ancho de los botones
         Row(
             modifier = Modifier
-                .width(actionsWidth) // Ajustar ancho para 3 botones
+                .width(actionsWidth)
                 .fillMaxHeight()
                 .align(Alignment.CenterEnd)
                 .background(Color.White),
@@ -417,11 +326,11 @@ fun SwipeableClientCard(
                 modifier = Modifier
                     .width(80.dp)
                     .fillMaxHeight(),
-                icon = Icons.Default.Info, // Usar un icono de información
+                icon = Icons.Default.Info,
                 label = "Detalles",
                 backgroundColor = Color(0xFF90CAF9),
                 onClick = {
-                    // Acción de detalles (por ahora vacío)
+                    onDetails?.invoke()
                     scope.launch {
                         swipeOffset.animateTo(0f, tween(300))
                         isRevealed = false
@@ -443,9 +352,7 @@ fun SwipeableClientCard(
                     }
                 }
             )
-
         }
-        // Card deslizable (sin fondo ni borde extra)
         Box(
             modifier = Modifier
                 .offset { IntOffset(swipeOffset.value.toInt(), 0) }
@@ -492,7 +399,7 @@ fun ClientList(
     onEdit: (Client) -> Unit,
     onDelete: (Client) -> Unit,
     cardHeight: Dp = 70.dp,
-    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp
+    fontSize: TextUnit = 16.sp
 ) {
     if (clients.isEmpty()) {
         EmptyClientsMessage(fontSize = fontSize)
@@ -501,8 +408,13 @@ fun ClientList(
     }
 }
 
+// 7. Adaptar EmptyClientsMessage para mensajes custom
 @Composable
-fun EmptyClientsMessage(fontSize: androidx.compose.ui.unit.TextUnit = 16.sp) {
+fun EmptyClientsMessage(
+    fontSize: TextUnit = 16.sp,
+    message: String = "No clients registered yet",
+    subMessage: String = "Tap the + button to add your first client!"
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -518,7 +430,7 @@ fun EmptyClientsMessage(fontSize: androidx.compose.ui.unit.TextUnit = 16.sp) {
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "No clients registered yet",
+                text = message,
                 style = MaterialTheme.typography.titleMedium.copy(
                     color = Color(0xFFB0B0B0),
                     fontWeight = FontWeight.SemiBold,
@@ -527,7 +439,7 @@ fun EmptyClientsMessage(fontSize: androidx.compose.ui.unit.TextUnit = 16.sp) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Tap the + button to add your first client!",
+                text = subMessage,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = Color(0xFFB0B0B0),
                     fontSize = fontSize
@@ -543,7 +455,7 @@ fun ClientsLazyList(
     onEdit: (Client) -> Unit,
     onDelete: (Client) -> Unit,
     cardHeight: Dp = 70.dp,
-    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp
+    fontSize: TextUnit = 16.sp
 ) {
     LazyColumn {
         items(clients) { client ->

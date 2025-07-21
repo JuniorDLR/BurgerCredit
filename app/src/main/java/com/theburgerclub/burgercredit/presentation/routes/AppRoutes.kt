@@ -9,15 +9,14 @@ sealed class AppRoute(val route: String) {
     object HomeScreen : AppRoute("home")
 
     // Clientes
-    object CustomerScreen : AppRoute("customer")
+
     object EditCustomerScreen : AppRoute("editCustomer/{customerId}")
     object AddCustomerScreen : AppRoute("addCustomer")
 
     // Platos
-    object DishesScreen : AppRoute("dishes")
     object EditDishScreen : AppRoute("editDish/{dishId}")
+    object AddDishScreen : AppRoute("addDishes")
 
     // Deudas
-    object DebtScreen : AppRoute("debt")
     object EditDebtScreen : AppRoute("editDebt/{debtId}")
 } 

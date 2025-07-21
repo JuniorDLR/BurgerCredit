@@ -53,8 +53,10 @@ fun MainScreen(
         },
         floatingActionButton = {
             MainFabForTab(selectedTab = uiState.selectedTab, onAdd = {
-                if (uiState.selectedTab == HomeTab.CUSTOMERS) {
-                    navController.navigate(AppRoute.AddCustomerScreen.route)
+                when (uiState.selectedTab) {
+                    HomeTab.CUSTOMERS -> navController.navigate(AppRoute.AddCustomerScreen.route)
+                    HomeTab.DISHES -> navController.navigate(AppRoute.AddDishScreen.route)
+                    else -> {  }
                 }
             })
         },
@@ -235,14 +237,8 @@ fun MainContent(
 ) {
     when (selectedTab) {
         HomeTab.HOME -> HomeTab()
-        HomeTab.CUSTOMERS -> if (navController != null) CustomersTab(navController) else CustomersTabPlaceholder()
-        HomeTab.DISHES -> DishesTab()
+        HomeTab.CUSTOMERS -> navController?.let { CustomersTab(it) }
+        HomeTab.DISHES -> navController?.let { DishesTab(it) }
         HomeTab.DEBTS -> DebtsTab()
     }
-}
-
-@Composable
-fun CustomersTabPlaceholder() {
-    // Placeholder en caso de que navController no esté disponible
-    Text("Customers")
 }

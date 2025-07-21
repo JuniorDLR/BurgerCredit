@@ -1,6 +1,6 @@
 package com.theburgerclub.burgercredit.presentation.home.ui
 
-import androidx.compose.foundation.background
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -21,8 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
 import com.theburgerclub.burgercredit.R
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
