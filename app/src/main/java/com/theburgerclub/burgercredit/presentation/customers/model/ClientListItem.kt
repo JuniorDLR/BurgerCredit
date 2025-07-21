@@ -11,4 +11,5 @@ interface ListItemUi {
 class ClientListItem(val client: Client) : ListItemUi {
     override fun getTitle() = client.getFullName()
     override fun getIcon() = client.icon
+    fun getSubtitle(): String = if (client.debtsCount == 0) "No debts yet" else "${client.debtsCount} debts"
 } 

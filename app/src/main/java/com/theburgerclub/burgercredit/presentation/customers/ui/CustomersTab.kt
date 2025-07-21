@@ -64,8 +64,6 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.navigation.NavController
 import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
 import com.theburgerclub.burgercredit.presentation.shared.GenericListScreen
@@ -83,94 +81,6 @@ fun CustomersTab(navController: NavController) {
 }
 
 
-@Composable
-fun DeleteCustomerDialog(
-    customerName: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0x99000000)) // Fondo semi-transparente
-    ) {
-        Box(
-            contentAlignment = Alignment.TopCenter,
-            modifier = Modifier.padding(horizontal = 32.dp)
-        ) {
-            // Card principal
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 40.dp)
-                    .border(width = 1.dp, Color(0xFFE57373), shape =  RoundedCornerShape(20.dp)), // Espacio para el icono
-                elevation = CardDefaults.cardElevation(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(top = 48.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
-                ) {
-                    Text(
-                        "Confirmar eliminación",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Text(
-                        text = buildAnnotatedString {
-                            append("¿Estás seguro de que deseas eliminar a \"")
-                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(customerName)
-                            }
-                            append("\"? Esta acción no se puede deshacer.")
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 24.dp),
-                        textAlign = TextAlign.Center
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Cancelar")
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Button(
-                            onClick = onConfirm,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Eliminar", color = Color.White)
-                        }
-                    }
-                }
-            }
-            // Icono de basura sobresaliente
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .offset(y = (-10).dp)
-                    .background(Color.White, shape = CircleShape)
-                    .border(2.dp, Color(0xFFE57373), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Eliminar",
-                    tint = Color(0xFFE57373),
-                    modifier = Modifier.size(48.dp)
-                )
-            }
-        }
-    }
-}
-
 
 @Composable
 fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = hiltViewModel(), navController: NavController? = null) {
@@ -182,7 +92,8 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
         Client(
             name = it.name,
             lastName = it.lastName,
-            icon = Icons.Default.Person
+            icon = Icons.Default.Person,
+            debtsCount = uiState.customersDebtsCount[it] ?: 0
         )
     }
     val displayClients = if (uiState.searchQuery.isNotBlank()) {
@@ -190,7 +101,8 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
             Client(
                 name = it.name,
                 lastName = it.lastName,
-                icon = Icons.Default.Person
+                icon = Icons.Default.Person,
+                debtsCount = uiState.customersDebtsCount[it] ?: 0
             )
         }
     } else {
@@ -212,7 +124,7 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
             }
         },
         onDelete = { item -> clientToDelete = item.client },
-        onDetails = null, // Puedes implementar detalles si lo deseas
+        onDetails = null,
         emptyMessage = "No clients registered yet",
         emptySubMessage = "Tap the + button to add your first client!",
         showDeleteDialog = clientToDelete != null,
@@ -230,250 +142,5 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
         icon = Icons.Default.Person,
         responsiveConfig = rememberResponsiveConfig()
     )
-}
-
-@Composable
-fun ClientCard(
-    name: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier,
-    cardHeight: Dp = 70.dp,
-    fontSize: TextUnit = 16.sp
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(cardHeight)
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = name,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-                fontSize = fontSize
-            ),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SwipeableClientCard(
-    name: String,
-    icon: ImageVector,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onDetails: (() -> Unit)? = null,
-    cardHeight: Dp = 70.dp,
-    fontSize: TextUnit = 16.sp
-) {
-    val buttonWidth = 80.dp
-    val actionsWidth = buttonWidth * 3
-    val density = LocalDensity.current
-    val maxSwipe = with(density) { actionsWidth.toPx() }
-    val swipeOffset = remember { Animatable(0f) }
-    var isRevealed by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(cardHeight)
-    ) {
-        Row(
-            modifier = Modifier
-                .width(actionsWidth)
-                .fillMaxHeight()
-                .align(Alignment.CenterEnd)
-                .background(Color.White),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ActionSquareButton(
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight(),
-                icon = Icons.Default.Edit,
-                label = "Editar",
-                backgroundColor = Color(0xFFA5D6A7),
-                onClick = {
-                    onEdit()
-                    scope.launch {
-                        swipeOffset.animateTo(0f, tween(300))
-                        isRevealed = false
-                    }
-                }
-            )
-            ActionSquareButton(
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight(),
-                icon = Icons.Default.Info,
-                label = "Detalles",
-                backgroundColor = Color(0xFF90CAF9),
-                onClick = {
-                    onDetails?.invoke()
-                    scope.launch {
-                        swipeOffset.animateTo(0f, tween(300))
-                        isRevealed = false
-                    }
-                }
-            )
-            ActionSquareButton(
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight(),
-                icon = Icons.Default.Delete,
-                label = "Eliminar",
-                backgroundColor = Color(0xFFE57373),
-                onClick = {
-                    onDelete()
-                    scope.launch {
-                        swipeOffset.animateTo(0f, tween(300))
-                        isRevealed = false
-                    }
-                }
-            )
-        }
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(swipeOffset.value.toInt(), 0) }
-                .fillMaxWidth()
-                .height(cardHeight)
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            scope.launch {
-                                if (swipeOffset.value < -maxSwipe / 2) {
-                                    swipeOffset.animateTo(-maxSwipe, tween(200))
-                                    isRevealed = true
-                                } else {
-                                    swipeOffset.animateTo(0f, tween(200))
-                                    isRevealed = false
-                                }
-                            }
-                        },
-                        onHorizontalDrag = { _, dragAmount ->
-                            val newOffset = (swipeOffset.value + dragAmount).coerceIn(-maxSwipe, 0f)
-                            scope.launch { swipeOffset.snapTo(newOffset) }
-                        }
-                    )
-                }
-                .pointerInput(isRevealed) {
-                    if (isRevealed) {
-                        detectTapGestures {
-                            scope.launch {
-                                swipeOffset.animateTo(0f, tween(200))
-                                isRevealed = false
-                            }
-                        }
-                    }
-                }
-        ) {
-            ClientCard(name = name, icon = icon, cardHeight = cardHeight, fontSize = fontSize)
-        }
-    }
-}
-
-@Composable
-fun ClientList(
-    clients: List<Client>,
-    onEdit: (Client) -> Unit,
-    onDelete: (Client) -> Unit,
-    cardHeight: Dp = 70.dp,
-    fontSize: TextUnit = 16.sp
-) {
-    if (clients.isEmpty()) {
-        EmptyClientsMessage(fontSize = fontSize)
-    } else {
-        ClientsLazyList(clients, onEdit, onDelete, cardHeight, fontSize)
-    }
-}
-
-// 7. Adaptar EmptyClientsMessage para mensajes custom
-@Composable
-fun EmptyClientsMessage(
-    fontSize: TextUnit = 16.sp,
-    message: String = "No clients registered yet",
-    subMessage: String = "Tap the + button to add your first client!"
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 64.dp),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                tint = Color(0xFFB0B0B0),
-                modifier = Modifier.size(64.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = message,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    color = Color(0xFFB0B0B0),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = fontSize
-                )
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = subMessage,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFFB0B0B0),
-                    fontSize = fontSize
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun ClientsLazyList(
-    clients: List<Client>,
-    onEdit: (Client) -> Unit,
-    onDelete: (Client) -> Unit,
-    cardHeight: Dp = 70.dp,
-    fontSize: TextUnit = 16.sp
-) {
-    LazyColumn {
-        items(clients) { client ->
-            Column(modifier = Modifier.fillMaxWidth()) {
-                SwipeableClientCard(
-                    name = client.getFullName(),
-                    icon = client.icon,
-                    onEdit = { onEdit(client) },
-                    onDelete = { onDelete(client) },
-                    cardHeight = cardHeight,
-                    fontSize = fontSize
-                )
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = Color(0xFFE0E0E0)
-                )
-            }
-        }
-    }
 }
 

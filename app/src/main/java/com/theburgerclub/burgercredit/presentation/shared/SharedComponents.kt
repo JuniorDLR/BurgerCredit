@@ -70,13 +70,13 @@ import kotlinx.coroutines.launch
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import com.theburgerclub.burgercredit.presentation.customers.ui.DeleteCustomerDialog
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Check
@@ -85,9 +85,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
 import com.theburgerclub.burgercredit.presentation.customers.model.ListItemUi
+import com.theburgerclub.burgercredit.presentation.dishes.model.DishListItem
 import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
 import com.theburgerclub.burgercredit.presentation.shared.model.ResponsiveConfig
 
@@ -376,6 +382,11 @@ fun <T : ListItemUi> GenericListScreen(
             LazyColumn {
                 items(items) { item ->
                     Column(modifier = Modifier.fillMaxWidth()) {
+                        val subtitle = when (item) {
+                            is ClientListItem -> item.getSubtitle()
+                            is DishListItem -> item.getSubtitle()
+                            else -> null
+                        }
                         SwipeableClientCard(
                             name = item.getTitle(),
                             icon = item.getIcon(),
@@ -383,7 +394,8 @@ fun <T : ListItemUi> GenericListScreen(
                             onDelete = { onDelete(item) },
                             onDetails = onDetails?.let { { it(item) } },
                             cardHeight = responsiveConfig.cardHeight,
-                            fontSize = responsiveConfig.fontSize
+                            fontSize = responsiveConfig.fontSize,
+                            subtitle = subtitle
                         )
                         HorizontalDivider(
                             thickness = 1.dp,
@@ -395,8 +407,8 @@ fun <T : ListItemUi> GenericListScreen(
         }
     }
     if (showDeleteDialog && itemToDelete != null) {
-        DeleteCustomerDialog(
-            customerName = getTitleForDialog(itemToDelete),
+        DeleteDialogShared(
+            data = getTitleForDialog(itemToDelete),
             onConfirm = onConfirmDelete,
             onDismiss = onDismissDelete
         )
@@ -454,7 +466,8 @@ fun SwipeableClientCard(
     onDelete: () -> Unit,
     onDetails: (() -> Unit)? = null,
     cardHeight: Dp = 70.dp,
-    fontSize: TextUnit = 16.sp
+    fontSize: TextUnit = 16.sp,
+    subtitle: String? = null
 ) {
     val buttonWidth = 80.dp
     val actionsWidth = buttonWidth * 3
@@ -581,16 +594,28 @@ fun SwipeableClientCard(
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = fontSize
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = fontSize
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (!subtitle.isNullOrBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = Color(0xFF607D8B),
+                                fontSize = fontSize.times(0.85f)
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
     }
@@ -600,6 +625,7 @@ fun SwipeableClientCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GenericFormScreen(
+    modifier: Modifier = Modifier,
     title: String,
     subtitle: String,
     description: String,
@@ -608,7 +634,6 @@ fun GenericFormScreen(
     submitButtonText: String,
     isLoading: Boolean,
     topContent: @Composable (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
     buttonEnabled: Boolean = true,
     backgroundBrush: Brush = Brush.verticalGradient(listOf(Color(0xFFF7F7F9), Color(0xFFE3E6F3))),
     cardShape: RoundedCornerShape = RoundedCornerShape(28.dp),
@@ -696,6 +721,95 @@ fun GenericFormScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun DeleteDialogShared(
+    data: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0x99000000)) // Fondo semi-transparente
+    ) {
+        Box(
+            contentAlignment = Alignment.TopCenter,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        ) {
+            // Card principal
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 40.dp)
+                    .border(width = 1.dp, Color(0xFFE57373), shape =  RoundedCornerShape(20.dp)), // Espacio para el icono
+                elevation = CardDefaults.cardElevation(8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 48.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
+                ) {
+                    Text(
+                        "Confirmar eliminación",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = buildAnnotatedString {
+                            append("¿Estás seguro de que deseas eliminar a \"")
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(data)
+                            }
+                            append("\"? Esta acción no se puede deshacer.")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 24.dp),
+                        textAlign = TextAlign.Center
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Cancelar")
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Button(
+                            onClick = onConfirm,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Eliminar", color = Color.White)
+                        }
+                    }
+                }
+            }
+            // Icono de basura sobresaliente
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .offset(y = (-10).dp)
+                    .background(Color.White, shape = CircleShape)
+                    .border(2.dp, Color(0xFFE57373), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = Color(0xFFE57373),
+                    modifier = Modifier.size(48.dp)
+                )
             }
         }
     }

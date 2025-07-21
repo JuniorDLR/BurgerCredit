@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theburgerclub.burgercredit.domain.model.Customer
 import com.theburgerclub.burgercredit.domain.usecase.CustomerUseCase
+import com.theburgerclub.burgercredit.domain.usecase.DebtUseCase
 import com.theburgerclub.burgercredit.presentation.customers.model.CustomerUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CustomerViewModel @Inject constructor(
-    private val customerUseCase: CustomerUseCase
+    private val customerUseCase: CustomerUseCase,
+    private val debtUseCase: DebtUseCase
 ) : ViewModel() {
 
     private val _customerUiState = MutableStateFlow(CustomerUiState())
@@ -33,7 +35,11 @@ class CustomerViewModel @Inject constructor(
     fun loadCustomers() {
         viewModelScope.launch {
             customerUseCase.getAllCustomers().collect { list ->
-                _customerUiState.update { it.copy(customers = list) }
+                val customersWithDebts = list.map { customer ->
+                    val debts = debtUseCase.getDebtsByCustomer(customer.id).first()
+                    customer to debts.size
+                }
+                _customerUiState.update { it.copy(customers = list, customersDebtsCount = customersWithDebts.toMap()) }
             }
         }
     }

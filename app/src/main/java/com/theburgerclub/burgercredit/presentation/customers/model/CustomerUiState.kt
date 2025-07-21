@@ -13,5 +13,6 @@ data class CustomerUiState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val searchResults: List<Customer> = emptyList(),
-    val isEdit: Boolean = false
+    val isEdit: Boolean = false,
+    val customersDebtsCount: Map<Customer, Int> = emptyMap()
 ) 
