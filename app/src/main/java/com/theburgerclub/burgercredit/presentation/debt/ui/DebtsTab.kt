@@ -52,7 +52,7 @@ fun DebtsTabBody(
         title = "Debts",
         searchPlaceholder = "Search debts",
         searchQuery = uiState.searchQuery,
-        isSearching = uiState.isSearching,
+        isLoading = uiState.isLoading,
         onSearchQueryChange = { viewModel.updateSearchQuery(it) },
         items = uiState.customerDebtGroups.map { DebtListItem(it) },
         onEdit = { item ->

@@ -12,7 +12,6 @@ data class DishUiState(
     val priceError: String? = null,
     val isLoading: Boolean = false,
     val searchQuery: String = "",
-    val isSearching: Boolean = false,
     val searchResults: List<Dish> = emptyList(),
     val imageUri: Uri? = null,
     val imageError: ImageError = ImageError.None,

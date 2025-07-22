@@ -19,9 +19,9 @@ import androidx.compose.runtime.collectAsState
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.theburgerclub.burgercredit.domain.model.Customer
-import com.theburgerclub.burgercredit.presentation.customers.model.getFullName
 import androidx.compose.material3.FabPosition
 import androidx.navigation.NavController
+import com.theburgerclub.burgercredit.domain.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
 import com.theburgerclub.burgercredit.presentation.shared.GenericListScreen
 import com.theburgerclub.burgercredit.presentation.shared.model.rememberTabResponsiveConfig
@@ -67,38 +67,44 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
     }
     fun getCustomerByName(name: String): Customer? = uiState.customers.find { it.name == name }
     val responsiveConfig = rememberTabResponsiveConfig()
-    GenericListScreen(
-        modifier = modifier,
-        title = if (uiState.searchQuery.isNotBlank()) "Search Results" else "Existing Clients",
-        searchPlaceholder = "Search clients",
+    GenericListScreen<ListItemUi>(
+        title = "Customers",
+        searchPlaceholder = "Search customers",
         searchQuery = uiState.searchQuery,
-        isSearching = uiState.isSearching,
+        isLoading = uiState.isLoading,
         onSearchQueryChange = { viewModel.updateSearchQuery(it) },
         items = displayClients.map { ClientListItem(it) },
         onEdit = { item ->
-            val customer = getCustomerByName(item.client.name)
-            if (customer != null && navController != null) {
-                navController.navigate("editCustomer/${customer.id}")
+            val client = (item as ClientListItem).client
+            val customer = getCustomerByName(client.name)
+            customer?.let {
+                viewModel.startEditCustomer(it)
+                navController?.navigate("editCustomer/${it.id}")
             }
         },
-        onDelete = { item -> clientToDelete = item.client },
-        onDetails = null,
-        emptyMessage = "No clients registered yet",
-        emptySubMessage = "Tap the + button to add your first client!",
+        onDelete = { item ->
+            val client = (item as ClientListItem).client
+            val customer = getCustomerByName(client.name)
+            customer?.let {
+                clientToDelete = client
+            }
+        },
+        emptyMessage = "No customers registered yet",
+        emptySubMessage = "Tap the + button to add your first customer!",
         showDeleteDialog = clientToDelete != null,
         itemToDelete = clientToDelete?.let { ClientListItem(it) },
         onConfirmDelete = {
-            val customer = getCustomerByName(clientToDelete!!.name)
-            if (customer != null) {
-                viewModel.deleteCustomer(customer)
-                Toast.makeText(context, "Customer deleted successfully", Toast.LENGTH_SHORT).show()
+            clientToDelete?.let { client ->
+                getCustomerByName(client.name)?.let { customer ->
+                    viewModel.deleteCustomer(customer)
+                    Toast.makeText(context, "Customer deleted successfully", Toast.LENGTH_SHORT).show()
+                }
             }
             clientToDelete = null
         },
         onDismissDelete = { clientToDelete = null },
-        getTitleForDialog = { it.client.getFullName() },
-        icon = Icons.Default.Person,
-        responsiveConfig = responsiveConfig
+        responsiveConfig = responsiveConfig,
+        modifier = modifier
     )
 }
 

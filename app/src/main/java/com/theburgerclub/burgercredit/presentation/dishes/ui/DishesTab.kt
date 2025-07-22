@@ -52,21 +52,19 @@ fun DishesTabBody(
         title = "Dishes",
         searchPlaceholder = "Search dishes",
         searchQuery = uiState.searchQuery,
-        isSearching = uiState.isSearching,
+        isLoading = uiState.isLoading,
         onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-        items = uiState.dishes.map { DishListItem(it) },
+        items = if (uiState.searchQuery.isBlank()) {
+            uiState.dishes.map { DishListItem(it) }
+        } else {
+            uiState.searchResults.map { DishListItem(it) }
+        },
         onEdit = { item ->
-            val dishItem = item as DishListItem
-            Toast.makeText(context, "Edit dish: ${dishItem.dish.name}", Toast.LENGTH_SHORT).show()
+            val dish = (item as DishListItem).dish
+            navController?.navigate("editDish/${dish.id}")
         },
         onDelete = { item ->
-            val dishItem = item as DishListItem
-            Toast.makeText(context, "Delete dish: ${dishItem.dish.name}", Toast.LENGTH_SHORT).show()
-        },
-        onDetails = { item ->
-            val dishItem = item as DishListItem
-            Toast.makeText(context, "View details: ${dishItem.dish.name}", Toast.LENGTH_SHORT)
-                .show()
+            dishToDelete = (item as DishListItem).dish
         },
         emptyMessage = "No dishes registered yet",
         emptySubMessage = "Tap the + button to add your first dish!",

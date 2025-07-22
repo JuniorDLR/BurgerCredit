@@ -61,13 +61,18 @@ class DishViewModel @Inject constructor(
     }
 
     init {
+        _dishUiState.update { it.copy(isLoading = true) }
         loadDishes()
     }
 
     fun loadDishes() {
         viewModelScope.launch {
+            delay(300)
             dishUseCase.getAllDishes().collect { list ->
-                _dishUiState.update { it.copy(dishes = list) }
+                _dishUiState.update { it.copy(
+                    dishes = list,
+                    isLoading = false
+                )}
             }
         }
     }
@@ -93,31 +98,38 @@ class DishViewModel @Inject constructor(
         }
     }
 
-    fun selectDish(dish: Dish?) {
-        _dishUiState.update { it.copy(selectedDish = dish) }
-    }
 
     fun updateSearchQuery(query: String) {
-        _dishUiState.update { it.copy(searchQuery = query) }
         searchJob?.cancel()
+        
         if (query.isBlank()) {
-            _dishUiState.update { it.copy(searchResults = emptyList(), isSearching = false) }
-        } else {
-            searchJob = viewModelScope.launch {
-                delay(300)
-                searchDishes(query)
-            }
+            _dishUiState.update { it.copy(
+                searchQuery = "",
+                isLoading = true
+            )}
+            loadDishes()
+            return
         }
-    }
 
-    private suspend fun searchDishes(query: String) {
-        _dishUiState.update { it.copy(isSearching = true) }
-        delay(500)
-        try {
-            val dishes = dishUseCase.searchDishesByName(query).first()
-            _dishUiState.update { it.copy(searchResults = dishes, isSearching = false) }
-        } catch (e: Exception) {
-            _dishUiState.update { it.copy(searchResults = emptyList(), isSearching = false) }
+        _dishUiState.update { it.copy(
+            searchQuery = query,
+            isLoading = true
+        )}
+
+        searchJob = viewModelScope.launch {
+            delay(500)
+            try {
+                val dishes = dishUseCase.searchDishesByName(query).first()
+                _dishUiState.update { it.copy(
+                    searchResults = dishes,
+                    isLoading = false
+                )}
+            } catch (e: Exception) {
+                _dishUiState.update { it.copy(
+                    searchResults = emptyList(),
+                    isLoading = false
+                )}
+            }
         }
     }
 

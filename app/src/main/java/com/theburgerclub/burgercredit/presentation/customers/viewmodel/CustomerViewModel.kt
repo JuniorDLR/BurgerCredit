@@ -29,17 +29,25 @@ class CustomerViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
+        _customerUiState.update { it.copy(isLoading = true) }
         loadCustomers()
     }
 
     fun loadCustomers() {
         viewModelScope.launch {
+            delay(300)
             customerUseCase.getAllCustomers().collect { list ->
                 val customersWithDebts = list.map { customer ->
                     val debts = debtUseCase.getDebtsByCustomer(customer.id).first()
                     customer to debts.size
                 }
-                _customerUiState.update { it.copy(customers = list, customersDebtsCount = customersWithDebts.toMap()) }
+                _customerUiState.update {
+                    it.copy(
+                        customers = list,
+                        customersDebtsCount = customersWithDebts.toMap(),
+                        isLoading = false
+                    )
+                }
             }
         }
     }
@@ -65,17 +73,6 @@ class CustomerViewModel @Inject constructor(
         }
     }
 
-    fun selectCustomer(customer: Customer?) {
-        _customerUiState.update { it.copy(selectedCustomer = customer) }
-    }
-
-    fun searchCustomersByName(name: String) {
-        viewModelScope.launch {
-            customerUseCase.searchCustomersByName(name).collect { list ->
-                _customerUiState.update { it.copy(customers = list) }
-            }
-        }
-    }
 
     fun onCustomerInputChange(newValue: String) {
         _customerUiState.update { it.copy(customerInput = newValue, customerInputError = null) }
@@ -108,61 +105,39 @@ class CustomerViewModel @Inject constructor(
     }
 
     fun updateSearchQuery(query: String) {
-        _customerUiState.update { it.copy(searchQuery = query) }
-
-        // Cancelar búsqueda anterior si existe
         searchJob?.cancel()
-
+        
         if (query.isBlank()) {
-            // Si la búsqueda está vacía, mostrar todos los clientes
-            _customerUiState.update {
-                it.copy(
-                    searchResults = emptyList(),
-                    isSearching = false
-                )
-            }
-        } else {
-            // Iniciar búsqueda con debounce
-            searchJob = viewModelScope.launch {
-                delay(300) // Debounce de 300ms
-                searchCustomers(query)
-            }
-        }
-    }
-
-    private suspend fun searchCustomers(query: String) {
-        _customerUiState.update { it.copy(isSearching = true) }
-
-        // Pequeño delay para que se vea el loading
-        delay(500)
-
-        try {
-            val customers = customerUseCase.searchCustomersByName(query).first()
-            _customerUiState.update {
-                it.copy(
-                    searchResults = customers,
-                    isSearching = false
-                )
-            }
-        } catch (e: Exception) {
-            _customerUiState.update {
-                it.copy(
-                    searchResults = emptyList(),
-                    isSearching = false
-                )
-            }
-        }
-    }
-
-    fun clearSearch() {
-        _customerUiState.update {
-            it.copy(
+            _customerUiState.update { it.copy(
                 searchQuery = "",
-                searchResults = emptyList(),
-                isSearching = false
-            )
+                isLoading = true
+            )}
+            loadCustomers()
+            return
+        }
+
+        _customerUiState.update { it.copy(
+            searchQuery = query,
+            isLoading = true
+        )}
+
+        searchJob = viewModelScope.launch {
+            delay(500)
+            try {
+                val customers = customerUseCase.searchCustomersByName(query).first()
+                _customerUiState.update { it.copy(
+                    searchResults = customers,
+                    isLoading = false
+                )}
+            } catch (e: Exception) {
+                _customerUiState.update { it.copy(
+                    searchResults = emptyList(),
+                    isLoading = false
+                )}
+            }
         }
     }
+
 
     fun startEditCustomer(customer: Customer) {
         _customerUiState.update {
@@ -286,7 +261,10 @@ class CustomerViewModel @Inject constructor(
         // Si no hay cambios, mostrar error
         if (selected != null && name.trim() == selected.name.trim() && lastName.trim() == selected.lastName.trim()) {
             _customerUiState.update {
-                it.copy(customerInputError = "No changes detected. Please modify the name or last name.", isLoading = false)
+                it.copy(
+                    customerInputError = "No changes detected. Please modify the name or last name.",
+                    isLoading = false
+                )
             }
             return false
         }

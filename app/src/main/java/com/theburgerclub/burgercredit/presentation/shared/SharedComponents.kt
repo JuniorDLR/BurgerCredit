@@ -376,7 +376,7 @@ fun <T : ListItemUi> GenericListScreen(
     title: String,
     searchPlaceholder: String = "Search...",
     searchQuery: String,
-    isSearching: Boolean,
+    isLoading: Boolean,
     onSearchQueryChange: (String) -> Unit,
     items: List<T>,
     onEdit: (T) -> Unit,
@@ -393,7 +393,9 @@ fun <T : ListItemUi> GenericListScreen(
     icon: ImageVector = Icons.Default.Person
 ) {
     var openCardId by remember { mutableStateOf<Any?>(null) }
+
     Column(modifier = modifier.fillMaxSize()) {
+        // Search Field and Title
         Column(modifier = Modifier.padding(horizontal = responsiveConfig.horizontalPadding)) {
             OutlinedTextField(
                 value = searchQuery,
@@ -406,15 +408,7 @@ fun <T : ListItemUi> GenericListScreen(
                     )
                 },
                 leadingIcon = {
-                    if (isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    }
+                    Icon(Icons.Default.Search, contentDescription = null)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -438,30 +432,52 @@ fun <T : ListItemUi> GenericListScreen(
                 modifier = Modifier.padding(vertical = responsiveConfig.verticalPadding)
             )
         }
-        if (items.isEmpty()) {
-            EmptyClientsMessage(
-                fontSize = responsiveConfig.fontSize,
-                message = emptyMessage,
-                subMessage = emptySubMessage,
-                icon = icon
-            )
-        } else {
-            LazyColumn {
-                itemsIndexed(items) { index, item ->
-                    GenericListItemRow(
-                        item = item,
-                        index = index,
-                        openCardId = openCardId,
-                        onEdit = onEdit,
-                        onDelete = onDelete,
-                        onDetails = onDetails,
-                        responsiveConfig = responsiveConfig,
-                        setOpenCardId = { openCardId = it }
+
+        // Content Area
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 4.dp
                     )
+                }
+            } else if (items.isEmpty()) {
+                EmptyClientsMessage(
+                    fontSize = responsiveConfig.fontSize,
+                    message = emptyMessage,
+                    subMessage = emptySubMessage,
+                    icon = icon
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    itemsIndexed(items) { index, item ->
+                        GenericListItemRow(
+                            item = item,
+                            index = index,
+                            openCardId = openCardId,
+                            onEdit = onEdit,
+                            onDelete = onDelete,
+                            onDetails = onDetails,
+                            responsiveConfig = responsiveConfig,
+                            setOpenCardId = { openCardId = it }
+                        )
+                    }
                 }
             }
         }
     }
+
     if (showDeleteDialog && itemToDelete != null) {
         DeleteDialogShared(
             data = getTitleForDialog(itemToDelete),

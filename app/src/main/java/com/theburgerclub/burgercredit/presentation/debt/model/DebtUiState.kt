@@ -14,7 +14,6 @@ data class DebtUiState(
     val debts: List<Debt> = emptyList(),
     val customerDebtGroups: List<CustomerDebtGroup> = emptyList(),
     val searchQuery: String = "",
-    val isSearching: Boolean = false,
     
     // Shared State
     val isLoading: Boolean = false,

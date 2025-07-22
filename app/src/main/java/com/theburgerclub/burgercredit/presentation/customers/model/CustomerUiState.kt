@@ -11,7 +11,6 @@ data class CustomerUiState(
     val lastNameInputError: String? = null,
     val isLoading: Boolean = false,
     val searchQuery: String = "",
-    val isSearching: Boolean = false,
     val searchResults: List<Customer> = emptyList(),
     val isEdit: Boolean = false,
     val customersDebtsCount: Map<Customer, Int> = emptyMap()

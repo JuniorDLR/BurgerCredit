@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 @HiltViewModel
 class DebtViewModel @Inject constructor(
@@ -31,6 +33,8 @@ class DebtViewModel @Inject constructor(
 
     private val _dishes = MutableStateFlow<List<Dish>>(emptyList())
     val dishes: StateFlow<List<Dish>> = _dishes.asStateFlow()
+
+    private var searchJob: Job? = null
 
     private val _customerSearchQuery = MutableStateFlow("")
     val filteredCustomers: StateFlow<List<Customer>> = _customerSearchQuery
@@ -59,6 +63,7 @@ class DebtViewModel @Inject constructor(
         )
 
     init {
+        _debtUiState.update { it.copy(isLoading = true) }
         loadInitialData()
         loadDebts()
     }
@@ -78,6 +83,7 @@ class DebtViewModel @Inject constructor(
 
     private fun loadDebts() {
         viewModelScope.launch {
+            delay(300)
             combine(
                 debtUseCase.getAllDebts(),
                 customerUseCase.getAllCustomers()
@@ -98,7 +104,7 @@ class DebtViewModel @Inject constructor(
                 _debtUiState.update { it.copy(
                     debts = debts,
                     customerDebtGroups = groupedDebts,
-                    isSearching = false
+                    isLoading = false
                 )}
             }.collect()
         }
@@ -113,16 +119,28 @@ class DebtViewModel @Inject constructor(
     }
 
     fun updateSearchQuery(query: String) {
+        searchJob?.cancel()
+        
+        if (query.isBlank()) {
+            _debtUiState.update { it.copy(
+                searchQuery = "",
+                isLoading = true
+            )}
+            loadDebts()
+            return
+        }
+
         _debtUiState.update { it.copy(
             searchQuery = query,
-            isSearching = true
+            isLoading = true
         )}
 
-        viewModelScope.launch {
-            combine(
-                debtUseCase.getAllDebts(),
-                customerUseCase.getAllCustomers()
-            ) { debts, customers ->
+        searchJob = viewModelScope.launch {
+            delay(500)
+            try {
+                val debts = debtUseCase.getAllDebts().first()
+                val customers = customerUseCase.getAllCustomers().first()
+                
                 val customerMap = customers.associateBy { it.id }
                 val filteredGroups = debts
                     .groupBy { it.customerId }
@@ -140,9 +158,14 @@ class DebtViewModel @Inject constructor(
 
                 _debtUiState.update { it.copy(
                     customerDebtGroups = filteredGroups,
-                    isSearching = false
+                    isLoading = false
                 )}
-            }.collect()
+            } catch (e: Exception) {
+                _debtUiState.update { it.copy(
+                    customerDebtGroups = emptyList(),
+                    isLoading = false
+                )}
+            }
         }
     }
 
