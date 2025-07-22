@@ -1,5 +1,6 @@
 package com.theburgerclub.burgercredit
 
+import AddDebtScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -46,6 +47,7 @@ fun AppNavGraph() {
         composable(route = AppRoute.HomeScreen.route) { MainScreen(navController) }
         composable(route = AppRoute.AddCustomerScreen.route) { AddCustomersScreen(navController) }
         composable(route = AppRoute.AddDishScreen.route) { AddDishesScreen(navController) }
+        composable(route = AppRoute.AddDebtScreen.route) { AddDebtScreen(navController) }
         composable(
             route = AppRoute.EditDishScreen.route,
             arguments = listOf(navArgument("dishId") { type = NavType.LongType })

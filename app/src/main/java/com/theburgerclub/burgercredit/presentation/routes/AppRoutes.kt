@@ -19,4 +19,5 @@ sealed class AppRoute(val route: String) {
 
     // Deudas
     object EditDebtScreen : AppRoute("editDebt/{debtId}")
+    object AddDebtScreen : AppRoute("addDebt")
 } 

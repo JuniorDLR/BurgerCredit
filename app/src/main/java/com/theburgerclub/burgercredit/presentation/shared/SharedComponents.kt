@@ -90,14 +90,15 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import com.theburgerclub.burgercredit.domain.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
-import com.theburgerclub.burgercredit.presentation.customers.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.dishes.model.DishListItem
 import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.lazy.itemsIndexed
 import com.theburgerclub.burgercredit.presentation.shared.model.TabResponsiveConfig
+import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -196,6 +197,7 @@ fun MainFabForTab(
     when (selectedTab) {
         HomeTab.CUSTOMERS -> SharedExtendedFab(text = "Add Client", onAdd = onAdd)
         HomeTab.DISHES -> SharedExtendedFab(text = "Add dishes", onAdd = onAdd)
+        HomeTab.DEBTS -> SharedExtendedFab(text = "Add debts", onAdd = onAdd)
         else -> {}
     }
 }
@@ -328,16 +330,20 @@ private fun <T : ListItemUi> GenericListItemRow(
     val subtitle = when (item) {
         is ClientListItem -> item.getSubtitle()
         is DishListItem -> item.getSubtitle()
-        else -> null
+        else -> item.getSubtitle()
     }
     val cardId = when (item) {
         is ClientListItem -> item.client.hashCode()
         is DishListItem -> item.dish.hashCode()
         else -> index
     }
-    val showViewDebtsButton = item is ClientListItem
+    val showViewDebtsButton = item is ClientListItem || item is DebtListItem
     val imageUri = when (item) {
         is DishListItem -> item.getPhotoUri()
+        else -> null
+    }
+    val amount = when (item) {
+        is DebtListItem -> item.getAmount()
         else -> null
     }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -354,7 +360,8 @@ private fun <T : ListItemUi> GenericListItemRow(
             openCardId = openCardId,
             onCardSwiped = setOpenCardId,
             showViewDebtsButton = showViewDebtsButton,
-            imageUri = imageUri
+            imageUri = imageUri,
+            amount = amount
         )
         HorizontalDivider(
             thickness = 1.dp,
@@ -559,7 +566,8 @@ private fun SwipeableCardContent(
     icon: ImageVector,
     subtitle: String?,
     imageUri: String?,
-    fontSize: TextUnit
+    fontSize: TextUnit,
+    amount: String? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -615,6 +623,17 @@ private fun SwipeableCardContent(
                 )
             }
         }
+        if (amount != null) {
+            Text(
+                text = amount,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = fontSize
+                ),
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
     }
 }
 
@@ -633,7 +652,8 @@ fun SwipeableClientCard(
     openCardId: Any?,
     onCardSwiped: (Any?) -> Unit,
     showViewDebtsButton: Boolean = true,
-    imageUri: String? = null
+    imageUri: String? = null,
+    amount: String? = null
 ) {
     val buttonWidth = 80.dp
     val actionsCount = if (showViewDebtsButton) 3 else 2
@@ -725,7 +745,8 @@ fun SwipeableClientCard(
                 icon = icon,
                 subtitle = subtitle,
                 imageUri = imageUri,
-                fontSize = fontSize
+                fontSize = fontSize,
+                amount = amount
             )
         }
     }

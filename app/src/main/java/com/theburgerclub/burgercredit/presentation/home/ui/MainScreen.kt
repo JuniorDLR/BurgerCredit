@@ -56,7 +56,8 @@ fun MainScreen(
                 when (uiState.selectedTab) {
                     HomeTab.CUSTOMERS -> navController.navigate(AppRoute.AddCustomerScreen.route)
                     HomeTab.DISHES -> navController.navigate(AppRoute.AddDishScreen.route)
-                    else -> {  }
+                    HomeTab.DEBTS -> navController.navigate(AppRoute.AddDebtScreen.route)
+                    else -> {}
                 }
             })
         },
@@ -237,8 +238,8 @@ fun MainContent(
 ) {
     when (selectedTab) {
         HomeTab.HOME -> HomeTab()
-        HomeTab.CUSTOMERS -> navController?.let { CustomersTab(it) }
-        HomeTab.DISHES -> navController?.let { DishesTab(it) }
-        HomeTab.DEBTS -> DebtsTab()
+        HomeTab.CUSTOMERS -> navController?.let { CustomersTab(navController = it) }
+        HomeTab.DISHES -> navController?.let { DishesTab(navController = it) }
+        HomeTab.DEBTS -> navController?.let { DebtsTab(navController = it) }
     }
 }

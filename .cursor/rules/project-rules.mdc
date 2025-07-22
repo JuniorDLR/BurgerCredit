@@ -1,0 +1,49 @@
+---
+alwaysApply: true
+---
+
+
+# BurgerCredit
+
+Este proyecto consiste en el desarrollo de una aplicación de gestión de deudas para un negocio local de comida rápida. La herramienta permitirá llevar el control de clientes, platos ofrecidos, registro de deudas fiadas y pagos realizados. La aplicación está enfocada en brindar una solución práctica, visual y eficiente para reemplazar métodos manuales como cuadernos o notas físicas.
+
+Contexto de cada pantalla:
+Home / Dashboard: Muestra un resumen visual de la situación actual del negocio, incluyendo datos clave como cantidad de clientes con deudas activas, deudas activas de pagos pendientes, el total de todas las deudas activas y por ultimo top 3 de clientes con mas de 3 deudas activas.
+
+Gestión de Clientes: Permite ver, buscar, registrar y editar la información de los clientes que compran a crédito.
+
+Gestión de Platos: Facilita la administración del menú disponible para ventas fiadas, incluyendo la creación y edición de platos.
+
+Registro y Lista de Deudas: Permite registrar nuevas deudas asociadas a clientes, seleccionando platos y montos, además de mostrar la lista de deudas activas.
+
+Detalle y Gestión de Deudas por Cliente: Muestra el historial de deudas y pagos de un cliente específico, con opciones para registrar pagos, editar o eliminar deudas.
+
+Configuracion de usuario: Permite cambiar la contraseña del admin.
+
+
+## Tecnologias
+
+Estas son las tecnologías que vamos a utilizar para cada una de las funcionalidades
+
+- Jetpack Compose como sistema de interfaces.
+- Kotlin como lenguaje de programación.
+- Material 3 como sistema de diseño.
+- Los ViewModels de Arquitectura Components para la comunicación entre la UI y la capa de datos.
+- Hilt como inyector de dependecias.
+- Para persistencia de los datos, utilizaremos Room. Recuerda usar KSP y no KPT para las dependecias que generan código, como el compiler de Room.
+- Paging3 para mejorar el rendimineto de muchos datos y que carguen de 10 en 10, nos guiaremos con este repositorio para gestionar todo lo que tenga que ver con paging https://github.com/ArisGuimera/Paging3JetpackCompose
+
+
+## Arquitectura
+
+Vamos a usar arquitectura sencilla, donde tendremos:
+- MVVM
+- Clean architecture
+
+
+## Reglas extras
+
+- Siempre que termines de generar un codigo, compílalo para ver que no hay problemas. Para ello, utiliza compileDebugKotlin
+- Siempre crea composables mas pequeños y se organizado.
+- Aunque pienses que los build.gradle.kts estan incorrectos, los que tienes ahora mismo en el contexto son vaidos. Si tienes que modificar el libs.version o los ficheros gradle, simplemente añade lo nuevo que necesites, y no modifiques lo que ya existe.
+
