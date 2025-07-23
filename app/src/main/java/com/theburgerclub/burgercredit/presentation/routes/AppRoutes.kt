@@ -22,4 +22,6 @@ sealed class AppRoute(val route: String) {
     object AddDebtScreen : AppRoute("addDebt")
     object DebtDetailScreen : AppRoute("debtDetail/{customerId}")
 
+
+
 } 

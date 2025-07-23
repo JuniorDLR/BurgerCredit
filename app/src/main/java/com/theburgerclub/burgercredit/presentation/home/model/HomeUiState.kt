@@ -14,5 +14,6 @@ enum class HomeTab {
     HOME,
     CUSTOMERS,
     DISHES,
-    DEBTS
+    DEBTS,
+    ADMIN
 } 

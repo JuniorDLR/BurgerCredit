@@ -33,6 +33,7 @@ import com.theburgerclub.burgercredit.presentation.theme.BurgerWhite
 import com.theburgerclub.burgercredit.presentation.theme.BurgerBlack
 import com.theburgerclub.burgercredit.presentation.shared.MainFabForTab
 import androidx.navigation.NavController
+import com.theburgerclub.burgercredit.presentation.admin.ui.AdminTab
 import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 
 @Composable
@@ -191,7 +192,7 @@ fun MainBottomNavigation(
             onClick = { onTabSelected(HomeTab.DEBTS) },
             icon = {
                 HomeNavigationIcon(
-                    painter = painterResource(id = R.drawable.deuda),
+                    painter = painterResource(id = R.drawable.debt),
                     contentDescription = "Debts",
                     tint = if (selectedTab == HomeTab.DEBTS) BurgerOrange else BurgerBlack,
                     size = iconSize
@@ -212,6 +213,34 @@ fun MainBottomNavigation(
                 indicatorColor = BurgerWhite
             )
         )
+
+        NavigationBarItem(
+            selected = selectedTab == HomeTab.ADMIN,
+            onClick = { onTabSelected(HomeTab.ADMIN) },
+            icon = {
+                HomeNavigationIcon(
+                    painter = painterResource(id = R.drawable.admin),
+                    contentDescription = "Admin",
+                    tint = if (selectedTab == HomeTab.ADMIN) BurgerOrange else BurgerBlack,
+                    size = iconSize
+                )
+            },
+            label = {
+                Text(
+                    text = "Admin",
+                    fontSize = fontSize,
+                    fontWeight = if (selectedTab == HomeTab.ADMIN) FontWeight.Bold else FontWeight.Normal
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = BurgerOrange,
+                selectedTextColor = BurgerOrange,
+                unselectedIconColor = BurgerBlack,
+                unselectedTextColor = BurgerBlack,
+                indicatorColor = BurgerWhite
+            )
+        )
+
     }
 }
 
@@ -241,5 +270,6 @@ fun MainContent(
         HomeTab.CUSTOMERS -> navController?.let { CustomersTab(navController = it) }
         HomeTab.DISHES -> navController?.let { DishesTab(navController = it) }
         HomeTab.DEBTS -> navController?.let { DebtsTab(navController = it) }
+        HomeTab.ADMIN -> AdminTab()
     }
 }
