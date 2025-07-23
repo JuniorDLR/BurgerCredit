@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import java.text.SimpleDateFormat
 import java.util.*
+import com.theburgerclub.burgercredit.presentation.shared.formatCurrency
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.heightIn
@@ -45,11 +46,12 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import com.theburgerclub.burgercredit.domain.model.Dish
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 
 
 @Composable
@@ -196,7 +198,7 @@ private fun AddedDishItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 0.dp),
+            .padding(vertical = 6.dp, horizontal = 8.dp), // Más padding horizontal
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(2.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -205,7 +207,7 @@ private fun AddedDishItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp) // Padding generoso
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -215,20 +217,21 @@ private fun AddedDishItem(
                 Text(
                     name,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     modifier = Modifier.weight(2f)
                 )
                 Text(
-                    "$${"%.2f".format(unitPrice)} each",
-                    fontSize = 12.sp,
+                    text = "${formatCurrency(unitPrice)} each",
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 1,
                     modifier = Modifier.weight(1f),
-                    maxLines = 1
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
                 )
             }
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -239,26 +242,23 @@ private fun AddedDishItem(
                     onIncrease = onIncrease,
                     onDecrease = onDecrease
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = formatCurrency(unitPrice * quantity),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                IconButton(
+                    onClick = onRemove,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    modifier = Modifier.size(28.dp)
                 ) {
-                    Text(
-                        "$${"%.2f".format(unitPrice * quantity)}",
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(end = 8.dp),
-                        maxLines = 1
-                    )
-                    IconButton(
-                        onClick = onRemove,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
-                    }
+                    Icon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -463,8 +463,7 @@ private fun <T> SearchResultsList(
     }
 }
 
-// Función de extensión para formatear precios
-private fun Double.toCurrency(): String = "$" + String.format(Locale.US, "%,.2f", this)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -494,6 +493,8 @@ fun AddDebtScreen(
     val fechaActual = remember { Date() }
 
     val puedeGuardar = uiState.selectedCustomer != null && uiState.debtItems.isNotEmpty()
+
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -527,7 +528,7 @@ fun AddDebtScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
                     .widthIn(max = 600.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -639,20 +640,14 @@ fun AddDebtScreen(
                                 items = filteredDishes,
                                 onSelect = { dish ->
                                     platoSeleccionado = dish
-                                    platoSearch = ""
-                                    cantidad = 1
                                 },
-                                iconColor = MaterialTheme.colorScheme.primary,
+                                iconColor = MaterialTheme.colorScheme.secondary,
                                 itemContent = { dish ->
-                                    Triple(
-                                        dish.name,
-                                        dish.price.toCurrency(),
-                                        Icons.Default.RestaurantMenu
-                                    )
+                                    Triple(dish.name, formatCurrency(dish.price), Icons.Default.Fastfood)
                                 }
                             )
                         }
-                        uiState.debtItems.isNotEmpty() -> {
+                        uiState.debtItems.isNotEmpty() || uiState.isLoading -> {
                             Column {
                                 Text(
                                     "Added dishes:",
@@ -661,26 +656,37 @@ fun AddDebtScreen(
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
-                                AddedDishesList(
-                                    dishes = uiState.debtItems.map { (dish, quantity) ->
-                                        Triple(dish.name, dish.price, quantity)
-                                    },
-                                    onIncrease = { index ->
-                                        viewModel.updateDebtItemQuantity(
-                                            index,
-                                            uiState.debtItems[index].second + 1
-                                        )
-                                    },
-                                    onDecrease = { index ->
-                                        viewModel.updateDebtItemQuantity(
-                                            index,
-                                            uiState.debtItems[index].second - 1
-                                        )
-                                    },
-                                    onRemove = { index ->
-                                        viewModel.removeDebtItem(index)
+                                if (uiState.isLoading) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(120.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
                                     }
-                                )
+                                } else {
+                                    AddedDishesList(
+                                        dishes = uiState.debtItems.map { (dish, quantity) ->
+                                            Triple(dish.name, dish.price, quantity)
+                                        },
+                                        onIncrease = { index ->
+                                            viewModel.updateDebtItemQuantity(
+                                                index,
+                                                uiState.debtItems[index].second + 1
+                                            )
+                                        },
+                                        onDecrease = { index ->
+                                            viewModel.updateDebtItemQuantity(
+                                                index,
+                                                uiState.debtItems[index].second - 1
+                                            )
+                                        },
+                                        onRemove = { index ->
+                                            viewModel.removeDebtItem(index)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -698,7 +704,7 @@ fun AddDebtScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Total: ${uiState.totalAmount.toCurrency()}",
+                        text = "Total: ${formatCurrency(uiState.totalAmount)}",
                         fontSize = 28.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
@@ -714,9 +720,10 @@ fun AddDebtScreen(
                                         debt = debt,
                                         newAmount = uiState.totalAmount,
                                         newDescription = uiState.debtItems.joinToString("\n") {
-                                            "${it.first.name} x${it.second} (${(it.first.price * it.second).toCurrency()})"
+                                            "${it.first.name} x${it.second} (${formatCurrency(it.first.price * it.second)})"
                                         }
                                     )
+                                    Toast.makeText(context, "Debt updated successfully", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
                                 viewModel.saveDebt()

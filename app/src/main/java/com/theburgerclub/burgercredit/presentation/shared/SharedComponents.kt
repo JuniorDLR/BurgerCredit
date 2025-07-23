@@ -103,6 +103,15 @@ import com.theburgerclub.burgercredit.presentation.shared.model.TabResponsiveCon
 import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
 
 
+
+fun formatCurrency(value: String?): String {
+    return try {
+        if (value.isNullOrBlank()) "" else formatCurrency(value.toDouble())
+    } catch (_: NumberFormatException) {
+        value ?: ""
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAppBarShared(
@@ -363,7 +372,7 @@ private fun <T : ListItemUi> GenericListItemRow(
             onDetails = onDetails?.let { { it(item) } },
             cardHeight = responsiveConfig.cardHeight,
             fontSize = responsiveConfig.fontSize,
-            subtitle = subtitle,
+            subtitle = if (!subtitle.isNullOrBlank()) formatCurrency(subtitle) else null,
             id = cardId,
             openCardId = openCardId,
             onCardSwiped = setOpenCardId,
@@ -642,7 +651,7 @@ private fun SwipeableCardContent(
             )
             if (!subtitle.isNullOrBlank()) {
                 Text(
-                    text = subtitle,
+                    text = formatCurrency(subtitle),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color(0xFF607D8B),
                         fontSize = fontSize.times(0.85f)

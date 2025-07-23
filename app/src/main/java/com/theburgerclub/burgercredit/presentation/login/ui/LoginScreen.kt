@@ -48,6 +48,9 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.wrapContentHeight
 
 
 @Composable
@@ -685,6 +688,12 @@ fun AutoLoginDialog(screenWidth: Float, screenHeight: Float) {
         w > 720 -> 28.dp    // Large screens (tablets)
         else -> 24.dp                 // Default
     }
+    // Fondo semitransparente para dar enfoque (sin blur)
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.25f))
+    )
     Dialog(
         onDismissRequest = { },
         properties = DialogProperties(
@@ -694,20 +703,17 @@ fun AutoLoginDialog(screenWidth: Float, screenHeight: Float) {
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.85f)
+                .wrapContentHeight()
                 .padding(cardPadding),
-            shape = RoundedCornerShape(
-                topStart = 24.dp,
-                topEnd = 24.dp,
-                bottomStart = 24.dp,
-                bottomEnd = 24.dp
-            ),
+            shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(
                 containerColor = LoginColors.background
             ),
             elevation = CardDefaults.cardElevation(
-                defaultElevation = 16.dp
-            )
+                defaultElevation = 24.dp
+            ),
+            border = BorderStroke(1.dp, LoginColors.buttonPrimary.copy(alpha = 0.12f))
         ) {
             Column(
                 modifier = Modifier
@@ -716,13 +722,20 @@ fun AutoLoginDialog(screenWidth: Float, screenHeight: Float) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(spacing)
             ) {
-                // Container para el indicador de carga con fondo
+                // Fondo con gradiente para el loader
                 Box(
                     modifier = Modifier
                         .size(progressSize + 16.dp)
                         .background(
-                            color = LoginColors.buttonPrimary.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(16.dp)
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    LoginColors.buttonPrimary.copy(alpha = 0.18f),
+                                    Color.Transparent
+                                ),
+                                center = Offset((progressSize + 16.dp).toPx() / 2, (progressSize + 16.dp).toPx() / 2),
+                                radius = (progressSize + 16.dp).toPx() / 2
+                            ),
+                            shape = RoundedCornerShape(20.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -732,7 +745,7 @@ fun AutoLoginDialog(screenWidth: Float, screenHeight: Float) {
                         strokeWidth = strokeWidth
                     )
                 }
-                // Texto de verificación con sombra
+                // Texto principal
                 Text(
                     text = "Verificando credenciales",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -740,15 +753,31 @@ fun AutoLoginDialog(screenWidth: Float, screenHeight: Float) {
                         fontWeight = FontWeight.Bold,
                         fontSize = fontSize,
                         shadow = Shadow(
-                            color = Color.Black.copy(alpha = 0.1f),
-                            offset = Offset(1f, 1f),
-                            blurRadius = 2f
+                            color = Color.Black.copy(alpha = 0.12f),
+                            offset = Offset(1f, 2f),
+                            blurRadius = 4f
                         )
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                // Subtítulo opcional
+                Text(
+                    text = "Por favor, espera un momento...",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = LoginColors.dark.copy(alpha = 0.7f),
+                        fontSize = (fontSize.value * 0.68).sp
                     ),
                     textAlign = TextAlign.Center
                 )
             }
         }
     }
+}
+
+// Extensión para convertir Dp a px en Composable
+@Composable
+private fun Dp.toPx(): Float {
+    val density = LocalDensity.current
+    return with(density) { this@toPx.toPx() }
 }
 

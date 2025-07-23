@@ -25,8 +25,7 @@ import java.util.*
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.ui.platform.LocalContext
-import java.text.NumberFormat
-import java.util.Locale
+import com.theburgerclub.burgercredit.presentation.shared.formatCurrency
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.text.style.TextAlign
 
@@ -68,11 +67,6 @@ fun DebtDetailScreen(
             }
         }
     }
-}
-
-private fun Double.toCordoba(): String {
-    val format = NumberFormat.getCurrencyInstance(Locale("es", "NI"))
-    return format.format(this)
 }
 
 @Composable
@@ -152,7 +146,7 @@ private fun DebtSummaryCard(customerDebtGroup: CustomerDebtGroup, activeDebts: L
                         color = Color(0xFF607D8B)
                     )
                     Text(
-                        text = total.toCordoba(),
+                        text = formatCurrency(total),
                         style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     )
                 }
@@ -204,15 +198,16 @@ private fun DebtItemCard(
                     color = Color(0xFF607D8B)
                 )
                 Text(
-                    text = debt.amount.toCordoba(),
+                    text = formatCurrency(debt.amount),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 )
             }
             if (!debt.description.isNullOrBlank()) {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = debt.description,
-                    style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF607D8B)),
-                    modifier = Modifier.padding(top = 6.dp)
+                    text = formatDebtDescriptionWithCurrency(debt.description),
+                    color = Color(0xFF607D8B),
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -224,6 +219,17 @@ private fun DebtItemCard(
                 )
             )
         }
+    }
+}
+
+// Formatea los montos dentro de la descripción usando formatCurrency
+private fun formatDebtDescriptionWithCurrency(description: String): String {
+    // Busca patrones como ($123.45) y reemplaza por el formato correcto
+    val regex = Regex("\\((\\$?)([0-9.,]+)\\)")
+    return regex.replace(description) { matchResult ->
+        val amountStr = matchResult.groupValues[2].replace(",", "")
+        val amount = amountStr.toDoubleOrNull()
+        if (amount != null) "(${formatCurrency(amount)})" else matchResult.value
     }
 }
 

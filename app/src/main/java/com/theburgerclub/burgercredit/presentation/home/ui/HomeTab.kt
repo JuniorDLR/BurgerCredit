@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntSize
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.theburgerclub.burgercredit.presentation.home.viewmodel.HomeViewModel
+import com.theburgerclub.burgercredit.presentation.shared.formatCurrency
 
 
 
@@ -234,7 +235,7 @@ fun HomeSummarySection(
             ) {
                 SummaryCard(
                     title = "Total Outstanding Debt",
-                    value = "$${"%.2f".format(totalPendingAmount)}",
+                    value = formatCurrency(totalPendingAmount),
                     subtitle = "With active debts: $totalCustomersWithActiveDebt",
                     modifier = Modifier.weight(1f),
                     isPositive = true,
@@ -269,7 +270,7 @@ fun HomeSummarySection(
             ) {
                 SummaryCard(
                     title = "Total Outstanding Debt",
-                    value = "$${"%.2f".format(totalPendingAmount)}",
+                    value = formatCurrency(totalPendingAmount),
                     subtitle = "With active debts: $totalCustomersWithActiveDebt",
                     modifier = Modifier.weight(1f),
                     isPositive = true,
@@ -471,5 +472,3 @@ fun ActiveDebtsCard(
         }
     }
 }
-
-

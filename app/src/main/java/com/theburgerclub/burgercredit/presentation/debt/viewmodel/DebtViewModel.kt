@@ -17,6 +17,7 @@ import java.util.*
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import com.theburgerclub.burgercredit.presentation.shared.formatCurrency
 
 @HiltViewModel
 class DebtViewModel @Inject constructor(
@@ -83,7 +84,7 @@ class DebtViewModel @Inject constructor(
 
     private fun loadDebts() {
         viewModelScope.launch {
-            delay(300)
+            delay(1000)
             combine(
                 debtUseCase.getAllDebts(),
                 customerUseCase.getAllCustomers()
@@ -163,7 +164,7 @@ class DebtViewModel @Inject constructor(
                     customerDebtGroups = filteredGroups,
                     isLoading = false
                 )}
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _debtUiState.update { it.copy(
                     customerDebtGroups = emptyList(),
                     isLoading = false
@@ -229,7 +230,7 @@ class DebtViewModel @Inject constructor(
             if (state.selectedCustomer == null || state.debtItems.isEmpty()) return@launch
 
             val description = state.debtItems.joinToString("\n") {
-                "${it.first.name} x${it.second} ($${String.format("%.2f", it.first.price * it.second)})"
+                "${it.first.name} x${it.second} (${formatCurrency(it.first.price * it.second)})"
             }
 
             val debt = Debt(
@@ -258,7 +259,8 @@ class DebtViewModel @Inject constructor(
                 // Regex robusto para extraer todos los platos y cantidades
                 val debtItemsMap = mutableMapOf<Dish, Int>()
                 val lines = (debt.description ?: "").split("\n")
-                val regex = Regex("""(.+?) x(\d+) \(\$[\d,.]+\)""")
+                // Acepta ($400.00), (C$400), ($400), (C$400.00), etc.
+                val regex = Regex("""(.+?) x(\d+) \((?:C?\$)?([\d,.]+)\)""")
                 for (line in lines) {
                     val match = regex.find(line.trim())
                     if (match != null) {
