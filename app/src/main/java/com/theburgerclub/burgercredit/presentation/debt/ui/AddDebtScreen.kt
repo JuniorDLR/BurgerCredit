@@ -463,6 +463,8 @@ private fun <T> SearchResultsList(
     }
 }
 
+// Función de extensión para formatear precios
+private fun Double.toCurrency(): String = "$" + String.format(Locale.US, "%,.2f", this)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -525,7 +527,10 @@ fun AddDebtScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .widthIn(max = 600.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -540,7 +545,7 @@ fun AddDebtScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Add Debt",
+                            text = if (isEdit) "Edit Debt" else "Add Debt",
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -550,32 +555,30 @@ fun AddDebtScreen(
                             DividerDefaults.Thickness,
                             DividerDefaults.color
                         )
-
-                        // Cliente seleccionado o búsqueda
+                        // Customer selected or search
                         uiState.selectedCustomer?.let { customer ->
                             CustomerSelectedCard(
                                 name = "${customer.name} ${customer.lastName}",
-                                onClear = { 
+                                onClear = {
                                     viewModel.setSelectedCustomer(null)
                                     clienteSearch = ""
                                 }
                             )
                         } ?: SearchField(
                             value = clienteSearch,
-                            onValueChange = { 
+                            onValueChange = {
                                 clienteSearch = it
                                 viewModel.updateCustomerSearch(it)
                             },
                             label = "Search customer",
                             leadingIcon = Icons.Default.Person
                         )
-
-                        // Plato seleccionado o búsqueda
+                        // Dish selected or search
                         Spacer(Modifier.height(16.dp))
                         if (platoSeleccionado == null) {
                             SearchField(
                                 value = platoSearch,
-                                onValueChange = { 
+                                onValueChange = {
                                     platoSearch = it
                                     viewModel.updateDishSearch(it)
                                 },
@@ -589,7 +592,7 @@ fun AddDebtScreen(
                             )
                             Spacer(Modifier.height(8.dp))
                             DishQuantitySelector(
-                                cantidad = cantidad,
+                                quantity = cantidad,
                                 onIncrease = { cantidad++ },
                                 onDecrease = { if (cantidad > 1) cantidad-- },
                                 onAdd = {
@@ -607,8 +610,7 @@ fun AddDebtScreen(
                         }
                     }
                 }
-
-                // Área de resultados de búsqueda
+                // Search results area
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -626,7 +628,7 @@ fun AddDebtScreen(
                                 itemContent = { customer ->
                                     Triple(
                                         "${customer.name} ${customer.lastName}",
-                                        null, // No mostramos información secundaria
+                                        null, // No secondary info
                                         Icons.Default.Person
                                     )
                                 }
@@ -644,7 +646,7 @@ fun AddDebtScreen(
                                 itemContent = { dish ->
                                     Triple(
                                         dish.name,
-                                        "$${String.format("%.2f", dish.price)}",
+                                        dish.price.toCurrency(),
                                         Icons.Default.RestaurantMenu
                                     )
                                 }
@@ -683,8 +685,7 @@ fun AddDebtScreen(
                         }
                     }
                 }
-
-                // Footer con fecha y total
+                // Footer with date and total
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -697,7 +698,7 @@ fun AddDebtScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Total: $${"%.2f".format(uiState.totalAmount)}",
+                        "Total: ${uiState.totalAmount.toCurrency()}",
                         fontSize = 28.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
@@ -706,14 +707,14 @@ fun AddDebtScreen(
                     Spacer(Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            if (isEdit && debtId != null) {
+                            if (isEdit) {
                                 val debt = viewModel.debtUiState.value.debts.find { it.id == debtId }
                                 if (debt != null) {
                                     viewModel.updateDebt(
                                         debt = debt,
                                         newAmount = uiState.totalAmount,
                                         newDescription = uiState.debtItems.joinToString("\n") {
-                                            "${it.first.name} x${it.second} ($${String.format("%.2f", it.first.price * it.second)})"
+                                            "${it.first.name} x${it.second} (${(it.first.price * it.second).toCurrency()})"
                                         }
                                     )
                                 }
@@ -740,7 +741,7 @@ fun AddDebtScreen(
 
 @Composable
 private fun DishQuantitySelector(
-    cantidad: Int,
+    quantity: Int,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit,
     onAdd: () -> Unit,
@@ -764,7 +765,7 @@ private fun DishQuantitySelector(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             QuantitySelector(
-                quantity = cantidad,
+                quantity = quantity,
                 onIncrease = onIncrease,
                 onDecrease = onDecrease
             )

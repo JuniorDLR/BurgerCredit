@@ -17,7 +17,6 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Scaffold
-import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 
 @Composable

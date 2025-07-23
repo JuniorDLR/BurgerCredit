@@ -23,7 +23,12 @@ import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 import java.text.SimpleDateFormat
 import java.util.*
 import android.widget.Toast
+import androidx.compose.material.icons.Icons
 import androidx.compose.ui.platform.LocalContext
+import java.text.NumberFormat
+import java.util.Locale
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,28 +39,40 @@ fun DebtDetailScreen(
 ) {
     val uiState by viewModel.debtUiState.collectAsState()
     val customerDebtGroup = uiState.customerDebtGroups.firstOrNull { it.customer.id == customerId }
+    val isLoading = uiState.isLoading
 
     Scaffold(
         topBar = {
             TopAppBarShared(nameTopBar = "Debt Details", showNavigationIcon = true, onNavigationClick = { navController.popBackStack() })
         }
     ) { padding ->
-        if (customerDebtGroup != null) {
-            DebtDetailScreenBody(
-                customerDebtGroup = customerDebtGroup,
-                padding = padding,
-                viewModel = viewModel,
-                navController = navController
-            )
-        } else {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No information found for this client.", color = Color.Gray)
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            customerDebtGroup != null -> {
+                DebtDetailScreenBody(
+                    customerDebtGroup = customerDebtGroup,
+                    padding = padding,
+                    viewModel = viewModel,
+                    navController = navController
+                )
+            }
+            else -> {
+                EmptyDebtDetailsMessage(padding)
             }
         }
     }
+}
+
+private fun Double.toCordoba(): String {
+    val format = NumberFormat.getCurrencyInstance(Locale("es", "NI"))
+    return format.format(this)
 }
 
 @Composable
@@ -72,11 +89,12 @@ private fun DebtDetailScreenBody(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top
+            .padding(horizontal = 8.dp, vertical = 12.dp)
+            .widthIn(max = 600.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         DebtSummaryCard(customerDebtGroup, activeDebts)
-        Spacer(Modifier.height(18.dp))
         if (hasActiveDebts) {
             Button(
                 onClick = {
@@ -90,7 +108,6 @@ private fun DebtDetailScreenBody(
             ) {
                 Text("Mark all as Paid", color = Color.White)
             }
-            Spacer(Modifier.height(18.dp))
         }
         DebtListSection(activeDebts)
     }
@@ -98,7 +115,7 @@ private fun DebtDetailScreenBody(
 
 @Composable
 private fun DebtSummaryCard(customerDebtGroup: CustomerDebtGroup, activeDebts: List<Debt>) {
-    val cliente = customerDebtGroup.customer
+    val customer = customerDebtGroup.customer
     val total = activeDebts.sumOf { it.amount }
     Card(
         shape = RoundedCornerShape(18.dp),
@@ -112,7 +129,7 @@ private fun DebtSummaryCard(customerDebtGroup: CustomerDebtGroup, activeDebts: L
                 color = Color(0xFF607D8B)
             )
             Text(
-                text = "${cliente.name} ${cliente.lastName}",
+                text = "${customer.name} ${customer.lastName}",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(Modifier.height(10.dp))
@@ -135,7 +152,7 @@ private fun DebtSummaryCard(customerDebtGroup: CustomerDebtGroup, activeDebts: L
                         color = Color(0xFF607D8B)
                     )
                     Text(
-                        text = "$${"%.2f".format(total)}",
+                        text = total.toCordoba(),
                         style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     )
                 }
@@ -169,7 +186,7 @@ private fun DebtListSection(activeDebts: List<Debt>) {
 
 @Composable
 private fun DebtItemCard(
-    deuda: Debt,
+    debt: Debt,
     dateFormat: SimpleDateFormat
 ) {
     Card(
@@ -182,30 +199,75 @@ private fun DebtItemCard(
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    text = dateFormat.format(Date(deuda.dueDate)),
+                    text = dateFormat.format(Date(debt.dueDate)),
                     style = MaterialTheme.typography.labelMedium,
                     color = Color(0xFF607D8B)
                 )
                 Text(
-                    text = "$${"%.2f".format(deuda.amount)}",
+                    text = debt.amount.toCordoba(),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 )
             }
-            if (!deuda.description.isNullOrBlank()) {
+            if (!debt.description.isNullOrBlank()) {
                 Text(
-                    text = deuda.description,
+                    text = debt.description,
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF607D8B)),
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                text = if (deuda.isActive) "Status: Pending" else "Status: Paid",
+                text = if (debt.isActive) "Status: Pending" else "Status: Paid",
                 style = MaterialTheme.typography.labelMedium.copy(
-                    color = if (deuda.isActive) Color(0xFFE57373) else Color(0xFF43A047),
+                    color = if (debt.isActive) Color(0xFFE57373) else Color(0xFF43A047),
                     fontWeight = FontWeight.Bold
                 )
             )
+        }
+    }
+}
+
+@Composable
+private fun EmptyDebtDetailsMessage(padding: PaddingValues) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F6FA)),
+            elevation = CardDefaults.cardElevation(4.dp),
+            modifier = Modifier.widthIn(max = 400.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = Color(0xFF90CAF9),
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "No information found for this client.",
+                    color = Color(0xFF607D8B),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "This client has no active debts or does not exist.",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
