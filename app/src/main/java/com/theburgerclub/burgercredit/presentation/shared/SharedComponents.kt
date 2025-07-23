@@ -97,6 +97,8 @@ import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.theburgerclub.burgercredit.presentation.shared.model.TabResponsiveConfig
 import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
 
@@ -337,7 +339,13 @@ private fun <T : ListItemUi> GenericListItemRow(
         is DishListItem -> item.dish.hashCode()
         else -> index
     }
-    val hideDeleteButton = item is DebtListItem
+    // Lógica para los botones
+    val (showDetailsButton, showDeleteButton) = when (item) {
+        is ClientListItem -> true to true
+        is DishListItem -> false to true
+        is DebtListItem -> true to false
+        else -> true to true
+    }
     val imageUri = when (item) {
         is DishListItem -> item.getPhotoUri()
         else -> null
@@ -359,7 +367,8 @@ private fun <T : ListItemUi> GenericListItemRow(
             id = cardId,
             openCardId = openCardId,
             onCardSwiped = setOpenCardId,
-            hideDeleteButton = hideDeleteButton,
+            showDetailsButton = showDetailsButton,
+            showDeleteButton = showDeleteButton,
             imageUri = imageUri,
             amount = amount
         )
@@ -533,7 +542,8 @@ private fun SwipeActionsRow(
     onEdit: () -> Unit,
     onDetails: (() -> Unit)? = null,
     onDelete: () -> Unit,
-    hideDeleteButton: Boolean,
+    showDetailsButton: Boolean,
+    showDeleteButton: Boolean,
     actionsWidth: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -554,17 +564,19 @@ private fun SwipeActionsRow(
             onClick = onEdit
         )
 
-        ActionSquareButton(
-            modifier = Modifier
-                .width(80.dp)
-                .fillMaxHeight(),
-            icon = Icons.Default.AttachMoney,
-            label = "View Details",
-            backgroundColor = Color(0xFF90CAF9),
-            onClick = { onDetails?.invoke() }
-        )
+        if (showDetailsButton) {
+            ActionSquareButton(
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
+                icon = Icons.Default.AttachMoney,
+                label = "View Details",
+                backgroundColor = Color(0xFF90CAF9),
+                onClick = { onDetails?.invoke() }
+            )
+        }
 
-        if (!hideDeleteButton) {
+        if (showDeleteButton) {
             ActionSquareButton(
                 modifier = Modifier
                     .width(80.dp)
@@ -577,7 +589,6 @@ private fun SwipeActionsRow(
         }
     }
 }
-
 @Composable
 private fun SwipeableCardContent(
     name: String,
@@ -603,11 +614,11 @@ private fun SwipeableCardContent(
             contentAlignment = Alignment.Center
         ) {
             if (!imageUri.isNullOrBlank()) {
-                coil.compose.AsyncImage(
+                AsyncImage(
                     model = imageUri,
                     contentDescription = null,
                     modifier = Modifier.size(44.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    contentScale = ContentScale.Crop
                 )
             } else {
                 Icon(
@@ -669,13 +680,13 @@ fun SwipeableClientCard(
     id: Any,
     openCardId: Any?,
     onCardSwiped: (Any?) -> Unit,
-    hideDeleteButton: Boolean,
+    showDetailsButton: Boolean,
+    showDeleteButton: Boolean,
     imageUri: String? = null,
     amount: String? = null
 ) {
     val buttonWidth = 80.dp
-
-    val actionsCount = if (hideDeleteButton) 2 else 3
+    val actionsCount = (if (showDetailsButton) 1 else 0) + (if (showDeleteButton) 1 else 0) + 1
     val actionsWidth = buttonWidth * actionsCount
     val density = LocalDensity.current
     val maxSwipe = with(density) { actionsWidth.toPx() }
@@ -717,7 +728,8 @@ fun SwipeableClientCard(
                     isRevealed = false
                 }
             },
-            hideDeleteButton = hideDeleteButton,
+            showDetailsButton = showDetailsButton,
+            showDeleteButton = showDeleteButton,
             actionsWidth = actionsWidth,
             modifier = Modifier.align(Alignment.CenterEnd)
         )
