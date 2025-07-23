@@ -42,4 +42,7 @@ class DebtRepository @Inject constructor(
 
     fun searchDebtsByDescription(desc: String): Flow<List<DebtEntity>> =
         debtDao.searchDebtsByDescription(desc)
+
+    suspend fun updateDebtActiveStatus(debtId: Long, isActive: Boolean) =
+        debtDao.updateDebtActiveStatus(debtId, isActive)
 } 

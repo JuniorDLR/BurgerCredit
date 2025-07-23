@@ -4,7 +4,7 @@ sealed class AppRoute(val route: String) {
     // Auth
     object LoginScreen : AppRoute("login")
     object RegisterScreen : AppRoute("register")
-    
+
     // Home
     object HomeScreen : AppRoute("home")
 
@@ -20,4 +20,6 @@ sealed class AppRoute(val route: String) {
     // Deudas
     object EditDebtScreen : AppRoute("editDebt/{debtId}")
     object AddDebtScreen : AppRoute("addDebt")
+    object DebtDetailScreen : AppRoute("debtDetail/{customerId}")
+
 } 

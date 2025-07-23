@@ -9,5 +9,4 @@ data class AdminEntity(
     val id: Int = 0,
     val username: String,
     val password: String,
-    val rememberMe: Boolean = false
 ) 

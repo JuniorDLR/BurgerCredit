@@ -23,6 +23,7 @@ import androidx.compose.material3.FabPosition
 import androidx.navigation.NavController
 import com.theburgerclub.burgercredit.domain.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
+import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
 import com.theburgerclub.burgercredit.presentation.shared.GenericListScreen
 import com.theburgerclub.burgercredit.presentation.shared.model.rememberTabResponsiveConfig
 
@@ -87,6 +88,13 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
             val customer = getCustomerByName(client.name)
             customer?.let {
                 clientToDelete = client
+            }
+        },
+        onDetails = { item ->
+            val client = (item as ClientListItem).client
+            val customer = uiState.customers.find { it.name == client.name && it.lastName == client.lastName }
+            customer?.let {
+                navController?.navigate("debtDetail/${it.id}")
             }
         },
         emptyMessage = "No customers registered yet",

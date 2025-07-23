@@ -17,6 +17,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Scaffold
+import com.theburgerclub.burgercredit.presentation.routes.AppRoute
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
 
 @Composable
@@ -63,8 +64,9 @@ fun DebtsTabBody(
                 .show()
         },
         onDetails = { item ->
-            Toast.makeText(context, "View details for: ${item.getTitle()}", Toast.LENGTH_SHORT)
-                .show()
+            val debtListItem = item as DebtListItem
+            val customerId = debtListItem.customerDebtGroup.customer.id
+            navController.navigate("debtDetail/$customerId")
         },
         emptyMessage = "No debts registered yet",
         emptySubMessage = "Tap the + button to add your first debt!",

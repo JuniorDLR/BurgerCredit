@@ -93,10 +93,13 @@ class DebtViewModel @Inject constructor(
                     .groupBy { it.customerId }
                     .mapNotNull { (customerId, customerDebts) ->
                         customerMap[customerId]?.let { customer ->
-                            CustomerDebtGroup(
-                                customer = customer,
-                                debts = customerDebts
-                            )
+                            val activeDebts = customerDebts.filter { it.isActive }
+                            if (activeDebts.isNotEmpty()) {
+                                CustomerDebtGroup(
+                                    customer = customer,
+                                    debts = customerDebts
+                                )
+                            } else null
                         }
                     }
                     .sortedByDescending { it.totalAmount }
@@ -243,5 +246,15 @@ class DebtViewModel @Inject constructor(
 
     fun clearDebtState() {
         _debtUiState.update { DebtUiState() }
+    }
+
+
+    fun markAllDebtsAsPaid(customerDebtGroup: CustomerDebtGroup) {
+        viewModelScope.launch {
+            customerDebtGroup.debts.filter { it.isActive }.forEach { debt ->
+                debtUseCase.updateDebtActiveStatus(debt.id, false)
+            }
+            loadDebts()
+        }
     }
 } 

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,21 +31,25 @@ class CustomerViewModel @Inject constructor(
 
     init {
         _customerUiState.update { it.copy(isLoading = true) }
-        loadCustomers()
+        observeCustomersAndDebts()
     }
 
-    fun loadCustomers() {
+    private fun observeCustomersAndDebts() {
         viewModelScope.launch {
-            delay(300)
-            customerUseCase.getAllCustomers().collect { list ->
-                val customersWithDebts = list.map { customer ->
-                    val debts = debtUseCase.getDebtsByCustomer(customer.id).first()
-                    customer to debts.size
+          combine(
+                customerUseCase.getAllCustomers(),
+                debtUseCase.getAllDebts()
+            ) { customers, debts ->
+                val customersWithDebts = customers.map { customer ->
+                    val activeDebts = debts.filter { it.customerId == customer.id && it.isActive }
+                    customer to activeDebts.size
                 }
+                customers to customersWithDebts.toMap()
+            }.collect { (customers, customersDebtsCount) ->
                 _customerUiState.update {
                     it.copy(
-                        customers = list,
-                        customersDebtsCount = customersWithDebts.toMap(),
+                        customers = customers,
+                        customersDebtsCount = customersDebtsCount,
                         isLoading = false
                     )
                 }
@@ -55,21 +60,21 @@ class CustomerViewModel @Inject constructor(
     private fun addCustomer(customer: Customer) {
         viewModelScope.launch {
             customerUseCase.addCustomer(customer)
-            loadCustomers()
+
         }
     }
 
     fun updateCustomer(customer: Customer) {
         viewModelScope.launch {
             customerUseCase.updateCustomer(customer)
-            loadCustomers()
+
         }
     }
 
     fun deleteCustomer(customer: Customer) {
         viewModelScope.launch {
             customerUseCase.deleteCustomer(customer)
-            loadCustomers()
+
         }
     }
 
@@ -112,7 +117,6 @@ class CustomerViewModel @Inject constructor(
                 searchQuery = "",
                 isLoading = true
             )}
-            loadCustomers()
             return
         }
 

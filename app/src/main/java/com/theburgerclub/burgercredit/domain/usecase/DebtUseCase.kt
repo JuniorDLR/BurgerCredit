@@ -43,4 +43,7 @@ class DebtUseCase @Inject constructor(
 
     fun searchDebtsByDescription(desc: String): Flow<List<Debt>> =
         repository.searchDebtsByDescription(desc).map { list -> list.map { it.toDomain() } }
+
+    suspend fun updateDebtActiveStatus(debtId: Long, isActive: Boolean) =
+        repository.updateDebtActiveStatus(debtId, isActive)
 } 

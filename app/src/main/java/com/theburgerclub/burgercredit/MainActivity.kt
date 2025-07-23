@@ -19,6 +19,7 @@ import com.theburgerclub.burgercredit.presentation.theme.BurgerCreditTheme
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.theburgerclub.burgercredit.presentation.debt.ui.DebtDetailScreen
 import com.theburgerclub.burgercredit.presentation.dishes.ui.AddDishesScreen
 
 @AndroidEntryPoint
@@ -48,6 +49,19 @@ fun AppNavGraph() {
         composable(route = AppRoute.AddCustomerScreen.route) { AddCustomersScreen(navController) }
         composable(route = AppRoute.AddDishScreen.route) { AddDishesScreen(navController) }
         composable(route = AppRoute.AddDebtScreen.route) { AddDebtScreen(navController) }
+
+
+        composable(
+            route = AppRoute.DebtDetailScreen.route,
+            arguments = listOf(navArgument("customerId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val customerId = backStackEntry.arguments?.getLong("customerId")
+            DebtDetailScreen(
+                navController = navController,
+                customerId = customerId)
+        }
+
+
         composable(
             route = AppRoute.EditDishScreen.route,
             arguments = listOf(navArgument("dishId") { type = NavType.LongType })

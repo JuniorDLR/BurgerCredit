@@ -49,4 +49,7 @@ interface DebtDao {
     // Search debts by description
     @Query("SELECT * FROM debts WHERE description LIKE '%' || :desc || '%' ORDER BY dueDate ASC")
     fun searchDebtsByDescription(desc: String): Flow<List<DebtEntity>>
+
+    @Query("UPDATE debts SET isActive = :isActive WHERE id = :debtId")
+    suspend fun updateDebtActiveStatus(debtId: Long, isActive: Boolean)
 } 
