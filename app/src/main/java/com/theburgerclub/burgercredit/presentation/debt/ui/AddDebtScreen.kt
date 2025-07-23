@@ -714,7 +714,7 @@ fun AddDebtScreen(
                     Button(
                         onClick = {
                             if (isEdit) {
-                                val debt = viewModel.debtUiState.value.debts.find { it.id == debtId }
+                                val debt = viewModel.editingDebt.value
                                 if (debt != null) {
                                     viewModel.updateDebt(
                                         debt = debt,

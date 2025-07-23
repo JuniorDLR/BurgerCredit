@@ -44,6 +44,9 @@ class DebtViewModel @Inject constructor(
     private val _dishes = MutableStateFlow<List<Dish>>(emptyList())
     val dishes: StateFlow<List<Dish>> = _dishes.asStateFlow()
 
+    private val _editingDebt = MutableStateFlow<Debt?>(null)
+    val editingDebt: StateFlow<Debt?> = _editingDebt.asStateFlow()
+
 
     private val _customerSearchQuery = MutableStateFlow("")
     val filteredCustomers: StateFlow<List<Customer>> = _customerSearchQuery
@@ -254,6 +257,7 @@ class DebtViewModel @Inject constructor(
         viewModelScope.launch {
             if (debtId == null) return@launch
             val debt = debtUseCase.getDebtById(debtId)
+            _editingDebt.value = debt
             debt?.let {
                 val customer =
                     customerUseCase.getAllCustomers().first().find { c -> c.id == debt.customerId }
