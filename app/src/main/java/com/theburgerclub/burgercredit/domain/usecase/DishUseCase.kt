@@ -6,6 +6,9 @@ import com.theburgerclub.burgercredit.domain.mapper.toEntity
 import com.theburgerclub.burgercredit.domain.model.Dish
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import androidx.paging.PagingData
+import androidx.paging.map
+import com.theburgerclub.burgercredit.data.local.entity.DishEntity
 import javax.inject.Inject
 
 class DishUseCase @Inject constructor(
@@ -30,6 +33,15 @@ class DishUseCase @Inject constructor(
         return repository.getDishByName(name)?.toDomain()
     }
 
-    fun searchDishesByName(name: String): Flow<List<Dish>> =
-        repository.searchDishesByName(name).map { list -> list.map { it.toDomain() } }
+    fun getDishesPaging(pageSize: Int = 10): Flow<PagingData<Dish>> =
+        repository.getDishesPaging(pageSize).map { pagingData: PagingData<DishEntity> ->
+            pagingData.map { it.toDomain() }
+        }
+
+    fun searchDishesPaging(name: String, pageSize: Int = 10): Flow<PagingData<Dish>> =
+        repository.searchDishesPaging(name, pageSize).map { pagingData: PagingData<DishEntity> ->
+            pagingData.map { it.toDomain() }
+        }
+
+    suspend fun getDishCount(): Int = repository.getDishCount()
 } 

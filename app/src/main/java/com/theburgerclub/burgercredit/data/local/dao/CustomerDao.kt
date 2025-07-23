@@ -3,6 +3,7 @@ package com.theburgerclub.burgercredit.data.local.dao
 import androidx.room.*
 import com.theburgerclub.burgercredit.data.local.entity.CustomerEntity
 import kotlinx.coroutines.flow.Flow
+import androidx.paging.PagingSource
 
 @Dao
 interface CustomerDao {
@@ -22,9 +23,13 @@ interface CustomerDao {
     @Query("SELECT * FROM customers ORDER BY name ASC")
     fun getAllCustomers(): Flow<List<CustomerEntity>>
 
-    // Buscar clientes por nombre
+    @Query("SELECT * FROM customers ORDER BY name ASC")
+    fun pagingSource(): PagingSource<Int, CustomerEntity>
+
+
+
     @Query("SELECT * FROM customers WHERE name LIKE '%' || :name || '%' ORDER BY name ASC")
-    fun searchCustomersByName(name: String): Flow<List<CustomerEntity>>
+    fun pagingSourceByName(name: String): PagingSource<Int, CustomerEntity>
 
     // Verificar si existe un cliente con el mismo nombre y apellido
     @Query("SELECT * FROM customers WHERE LOWER(name) = LOWER(:name) AND LOWER(lastName) = LOWER(:lastName) LIMIT 1")

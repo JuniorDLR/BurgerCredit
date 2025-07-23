@@ -12,11 +12,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.debounce
 
 @HiltViewModel
 class CustomerViewModel @Inject constructor(
@@ -27,16 +33,34 @@ class CustomerViewModel @Inject constructor(
     private val _customerUiState = MutableStateFlow(CustomerUiState())
     val customerUiState: StateFlow<CustomerUiState> = _customerUiState.asStateFlow()
 
-    private var searchJob: Job? = null
+
+    // Paging
+    private val _pagingSearchQuery = MutableStateFlow("")
+
+    @OptIn(FlowPreview::class)
+    private val debouncedPagingQuery = _pagingSearchQuery.debounce(400)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val customersPaging = debouncedPagingQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                customerUseCase.getCustomersPaging()
+            } else {
+                customerUseCase.searchCustomersPaging(query)
+            }
+        }
+        .cachedIn(viewModelScope)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PagingData.empty())
+
 
     init {
-        _customerUiState.update { it.copy(isLoading = true) }
         observeCustomersAndDebts()
     }
 
+
     private fun observeCustomersAndDebts() {
         viewModelScope.launch {
-          combine(
+            combine(
                 customerUseCase.getAllCustomers(),
                 debtUseCase.getAllDebts()
             ) { customers, debts ->
@@ -50,7 +74,6 @@ class CustomerViewModel @Inject constructor(
                     it.copy(
                         customers = customers,
                         customersDebtsCount = customersDebtsCount,
-                        isLoading = false
                     )
                 }
             }
@@ -110,36 +133,12 @@ class CustomerViewModel @Inject constructor(
     }
 
     fun updateSearchQuery(query: String) {
-        searchJob?.cancel()
-        
-        if (query.isBlank()) {
-            _customerUiState.update { it.copy(
-                searchQuery = "",
-                isLoading = true
-            )}
-            return
+        _customerUiState.update { it: CustomerUiState ->
+            it.copy(
+                searchQuery = query
+            )
         }
-
-        _customerUiState.update { it.copy(
-            searchQuery = query,
-            isLoading = true
-        )}
-
-        searchJob = viewModelScope.launch {
-            delay(500)
-            try {
-                val customers = customerUseCase.searchCustomersByName(query).first()
-                _customerUiState.update { it.copy(
-                    searchResults = customers,
-                    isLoading = false
-                )}
-            } catch (_: Exception) {
-                _customerUiState.update { it.copy(
-                    searchResults = emptyList(),
-                    isLoading = false
-                )}
-            }
-        }
+        _pagingSearchQuery.value = query
     }
 
 

@@ -15,9 +15,18 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import com.theburgerclub.burgercredit.presentation.shared.formatCurrency
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
+import androidx.paging.filter
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.combine
+import kotlin.collections.emptyList
+import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
 
 @HiltViewModel
 class DebtViewModel @Inject constructor(
@@ -35,7 +44,6 @@ class DebtViewModel @Inject constructor(
     private val _dishes = MutableStateFlow<List<Dish>>(emptyList())
     val dishes: StateFlow<List<Dish>> = _dishes.asStateFlow()
 
-    private var searchJob: Job? = null
 
     private val _customerSearchQuery = MutableStateFlow("")
     val filteredCustomers: StateFlow<List<Customer>> = _customerSearchQuery
@@ -63,10 +71,46 @@ class DebtViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+
+    val debts: StateFlow<List<Debt>> = debtUseCase.getAllDebts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _pagingSearchQuery = MutableStateFlow("")
+
+    fun updatePagingSearchQuery(query: String) {
+        _pagingSearchQuery.value = query
+        _debtUiState.update { uiState ->
+            uiState.copy(
+                searchQuery = query
+            )
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val customersPaging = _pagingSearchQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) customerUseCase.getCustomersPaging()
+            else customerUseCase.searchCustomersPaging(query)
+        }
+        .cachedIn(viewModelScope)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PagingData.empty())
+
+    val customerDebtGroupsPaging = customersPaging
+        .combine(debts) { pagingData, debtsList ->
+            pagingData
+                .map { customer: Customer ->
+                    val activeDebts = debtsList.filter { it.customerId == customer.id && it.isActive }
+                    DebtListItem(CustomerDebtGroup(customer, activeDebts))
+                }
+                .filter { item: DebtListItem ->
+                    item.customerDebtGroup.debts.isNotEmpty()
+                }
+        }
+        .cachedIn(viewModelScope)
+
     init {
-        _debtUiState.update { it.copy(isLoading = true) }
         loadInitialData()
-        loadDebts()
+
     }
 
     private fun loadInitialData() {
@@ -105,11 +149,12 @@ class DebtViewModel @Inject constructor(
                     }
                     .sortedByDescending { it.totalAmount }
 
-                _debtUiState.update { it.copy(
-                    debts = debts,
-                    customerDebtGroups = groupedDebts,
-                    isLoading = false
-                )}
+                _debtUiState.update {
+                    it.copy(
+                        debts = debts,
+                        customerDebtGroups = groupedDebts,
+                    )
+                }
             }.collect()
         }
     }
@@ -120,57 +165,6 @@ class DebtViewModel @Inject constructor(
 
     fun updateDishSearch(query: String) {
         _dishSearchQuery.value = query
-    }
-
-    fun updateSearchQuery(query: String) {
-        searchJob?.cancel()
-        
-        if (query.isBlank()) {
-            _debtUiState.update { it.copy(
-                searchQuery = "",
-                isLoading = true
-            )}
-            loadDebts()
-            return
-        }
-
-        _debtUiState.update { it.copy(
-            searchQuery = query,
-            isLoading = true
-        )}
-
-        searchJob = viewModelScope.launch {
-            delay(500)
-            try {
-                val debts = debtUseCase.getAllDebts().first()
-                val customers = customerUseCase.getAllCustomers().first()
-                
-                val customerMap = customers.associateBy { it.id }
-                val filteredGroups = debts
-                    .groupBy { it.customerId }
-                    .mapNotNull { (customerId, customerDebts) ->
-                        customerMap[customerId]?.let { customer ->
-                            if ("${customer.name} ${customer.lastName}".contains(query, ignoreCase = true)) {
-                                CustomerDebtGroup(
-                                    customer = customer,
-                                    debts = customerDebts
-                                )
-                            } else null
-                        }
-                    }
-                    .sortedByDescending { it.totalAmount }
-
-                _debtUiState.update { it.copy(
-                    customerDebtGroups = filteredGroups,
-                    isLoading = false
-                )}
-            } catch (_: Exception) {
-                _debtUiState.update { it.copy(
-                    customerDebtGroups = emptyList(),
-                    isLoading = false
-                )}
-            }
-        }
     }
 
     fun deleteDebt(debt: Debt) {
@@ -194,30 +188,36 @@ class DebtViewModel @Inject constructor(
                 currentItems.add(Pair(dish, quantity))
             }
 
-            _debtUiState.update { it.copy(
-                debtItems = currentItems,
-                totalAmount = currentItems.sumOf { item -> item.first.price * item.second }
-            )}
+            _debtUiState.update {
+                it.copy(
+                    debtItems = currentItems,
+                    totalAmount = currentItems.sumOf { item -> item.first.price * item.second }
+                )
+            }
         }
     }
 
     fun removeDebtItem(index: Int) {
         val currentItems = _debtUiState.value.debtItems.toMutableList()
         currentItems.removeAt(index)
-        _debtUiState.update { it.copy(
-            debtItems = currentItems,
-            totalAmount = currentItems.sumOf { item -> item.first.price * item.second }
-        )}
+        _debtUiState.update {
+            it.copy(
+                debtItems = currentItems,
+                totalAmount = currentItems.sumOf { item -> item.first.price * item.second }
+            )
+        }
     }
 
     fun updateDebtItemQuantity(index: Int, newQuantity: Int) {
         if (newQuantity < 1) return
         val currentItems = _debtUiState.value.debtItems.toMutableList()
         currentItems[index] = currentItems[index].copy(second = newQuantity)
-        _debtUiState.update { it.copy(
-            debtItems = currentItems,
-            totalAmount = currentItems.sumOf { item -> item.first.price * item.second }
-        )}
+        _debtUiState.update {
+            it.copy(
+                debtItems = currentItems,
+                totalAmount = currentItems.sumOf { item -> item.first.price * item.second }
+            )
+        }
     }
 
     fun setSelectedCustomer(customer: Customer?) {
@@ -241,6 +241,7 @@ class DebtViewModel @Inject constructor(
             )
 
             debtUseCase.addDebt(debt)
+            loadDebts()
             _debtUiState.update { DebtUiState() }
         }
     }
@@ -254,7 +255,8 @@ class DebtViewModel @Inject constructor(
             if (debtId == null) return@launch
             val debt = debtUseCase.getDebtById(debtId)
             debt?.let {
-                val customer = customerUseCase.getAllCustomers().first().find { c -> c.id == debt.customerId }
+                val customer =
+                    customerUseCase.getAllCustomers().first().find { c -> c.id == debt.customerId }
                 val allDishes = dishUseCase.getAllDishes().first()
                 // Regex robusto para extraer todos los platos y cantidades
                 val debtItemsMap = mutableMapOf<Dish, Int>()

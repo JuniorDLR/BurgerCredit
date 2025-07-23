@@ -3,6 +3,7 @@ package com.theburgerclub.burgercredit.data.local.dao
 import androidx.room.*
 import com.theburgerclub.burgercredit.data.local.entity.DishEntity
 import kotlinx.coroutines.flow.Flow
+import androidx.paging.PagingSource
 
 @Dao
 interface DishDao {
@@ -22,6 +23,9 @@ interface DishDao {
     @Query("SELECT * FROM dishes ORDER BY name ASC")
     fun getAllDishes(): Flow<List<DishEntity>>
 
+    @Query("SELECT * FROM dishes ORDER BY name ASC")
+    fun pagingSource(): PagingSource<Int, DishEntity>
+
     // Obtener un plato por ID
     @Query("SELECT * FROM dishes WHERE id = :id LIMIT 1")
     suspend fun getDishById(id: Long): DishEntity?
@@ -30,7 +34,14 @@ interface DishDao {
     @Query("SELECT * FROM dishes WHERE name LIKE '%' || :name || '%' ORDER BY name ASC")
     fun searchDishesByName(name: String): Flow<List<DishEntity>>
 
+    @Query("SELECT * FROM dishes WHERE name LIKE '%' || :name || '%' ORDER BY name ASC")
+    fun pagingSourceByName(name: String): PagingSource<Int, DishEntity>
+
     // Obtener un plato por nombre exacto (case-insensitive)
     @Query("SELECT * FROM dishes WHERE LOWER(TRIM(name)) = LOWER(TRIM(:name)) LIMIT 1")
     suspend fun getDishByName(name: String): DishEntity?
+
+    // Contar la cantidad de platos
+    @Query("SELECT COUNT(*) FROM dishes")
+    suspend fun getDishCount(): Int
 } 

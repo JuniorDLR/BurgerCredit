@@ -96,12 +96,13 @@ import com.theburgerclub.burgercredit.presentation.dishes.model.DishListItem
 import com.theburgerclub.burgercredit.presentation.shared.model.FormFieldData
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.zIndex
+import androidx.paging.LoadState
 import coil.compose.AsyncImage
 import com.theburgerclub.burgercredit.presentation.shared.model.TabResponsiveConfig
 import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
-
+import androidx.paging.compose.LazyPagingItems
 
 
 fun formatCurrency(value: String?): String {
@@ -394,9 +395,8 @@ fun <T : ListItemUi> GenericListScreen(
     title: String,
     searchPlaceholder: String = "Search...",
     searchQuery: String,
-    isLoading: Boolean,
     onSearchQueryChange: (String) -> Unit,
-    items: List<T>,
+    pagingItems: LazyPagingItems<T>? = null,
     onEdit: (T) -> Unit,
     onDelete: (T) -> Unit,
     onDetails: ((T) -> Unit)? = null,
@@ -456,40 +456,103 @@ fun <T : ListItemUi> GenericListScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.TopCenter
         ) {
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 4.dp
-                    )
-                }
-            } else if (items.isEmpty()) {
-                EmptyClientsMessage(
-                    fontSize = responsiveConfig.fontSize,
-                    message = emptyMessage,
-                    subMessage = emptySubMessage,
-                    icon = icon
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    itemsIndexed(items) { index, item ->
-                        GenericListItemRow(
-                            item = item,
-                            index = index,
-                            openCardId = openCardId,
-                            onEdit = onEdit,
-                            onDelete = onDelete,
-                            onDetails = onDetails,
-                            responsiveConfig = responsiveConfig,
-                            setOpenCardId = { openCardId = it }
+            if (pagingItems != null) {
+                val isSearching = searchQuery.isNotBlank()
+                val showInitialLoader = pagingItems.loadState.refresh is LoadState.Loading && pagingItems.itemCount == 0
+                val showOverlayLoader = pagingItems.loadState.refresh is LoadState.Loading && pagingItems.itemCount > 0
+                when {
+                    showInitialLoader -> {
+
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 4.dp
+                            )
+                        }
+                    }
+                    pagingItems.loadState.refresh is LoadState.NotLoading && pagingItems.itemCount == 0 -> {
+                        // Mensaje vacío según si hay filtro
+                        EmptyClientsMessage(
+                            fontSize = responsiveConfig.fontSize,
+                            message = if (isSearching) "No results found for \"$searchQuery\"" else emptyMessage,
+                            subMessage = if (isSearching) "Try another name or clear the search." else emptySubMessage,
+                            icon = icon
                         )
+                    }
+                    pagingItems.loadState.refresh is LoadState.Error -> {
+                        val error = (pagingItems.loadState.refresh as LoadState.Error).error
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFFFDECEA)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Ha ocurrido un error: ${error.localizedMessage}",
+                                color = Color(0xFFD32F2F),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                    }
+                    else -> {
+                        Box(Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(top = 8.dp, bottom = 88.dp)
+                            ) {
+                                items(pagingItems.itemCount) { index ->
+                                    val item = pagingItems[index]
+                                    if (item != null) {
+                                        GenericListItemRow(
+                                            item = item,
+                                            index = index,
+                                            openCardId = openCardId,
+                                            onEdit = onEdit,
+                                            onDelete = onDelete,
+                                            onDetails = onDetails,
+                                            responsiveConfig = responsiveConfig,
+                                            setOpenCardId = { openCardId = it }
+                                        )
+                                    }
+                                }
+                                // Loader de paginación al final (append)
+                                if (pagingItems.loadState.append is LoadState.Loading) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(36.dp),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            // Loader de búsqueda SOBRE la lista (overlay)
+                            if (showOverlayLoader) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .zIndex(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(48.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        strokeWidth = 4.dp
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -598,6 +661,7 @@ private fun SwipeActionsRow(
         }
     }
 }
+
 @Composable
 private fun SwipeableCardContent(
     name: String,

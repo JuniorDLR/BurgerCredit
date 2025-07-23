@@ -6,6 +6,9 @@ import com.theburgerclub.burgercredit.domain.mapper.toEntity
 import com.theburgerclub.burgercredit.domain.model.Customer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import androidx.paging.PagingData
+import androidx.paging.map
+import com.theburgerclub.burgercredit.data.local.entity.CustomerEntity
 import javax.inject.Inject
 
 class CustomerUseCase @Inject constructor(
@@ -25,9 +28,16 @@ class CustomerUseCase @Inject constructor(
 
 
 
-    fun searchCustomersByName(name: String): Flow<List<Customer>> =
-        repository.searchCustomersByName(name).map { list -> list.map { it.toDomain() } }
-
     suspend fun getCustomerByNameAndLastName(name: String, lastName: String): Customer? =
         repository.getCustomerByNameAndLastName(name, lastName)?.toDomain()
+
+    fun getCustomersPaging(pageSize: Int = 10): Flow<PagingData<Customer>> =
+        repository.getCustomersPaging(pageSize).map { pagingData: PagingData<CustomerEntity> ->
+            pagingData.map { it.toDomain() }
+        }
+
+    fun searchCustomersPaging(name: String, pageSize: Int = 10): Flow<PagingData<Customer>> =
+        repository.searchCustomersPaging(name, pageSize).map { pagingData: PagingData<CustomerEntity> ->
+            pagingData.map { it.toDomain() }
+        }
 } 

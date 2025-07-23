@@ -18,13 +18,14 @@ import com.theburgerclub.burgercredit.presentation.customers.viewmodel.CustomerV
 import androidx.compose.runtime.collectAsState
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
-import com.theburgerclub.burgercredit.domain.model.Customer
 import androidx.compose.material3.FabPosition
 import androidx.navigation.NavController
-import com.theburgerclub.burgercredit.domain.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
 import com.theburgerclub.burgercredit.presentation.shared.GenericListScreen
 import com.theburgerclub.burgercredit.presentation.shared.model.rememberTabResponsiveConfig
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.map
+import kotlinx.coroutines.flow.map
 
 
 @Composable
@@ -38,60 +39,60 @@ fun CustomersTab(navController: NavController) {
 }
 
 
-
 @Composable
-fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = hiltViewModel(), navController: NavController? = null) {
+fun CustomersBody(
+    modifier: Modifier = Modifier,
+    viewModel: CustomerViewModel = hiltViewModel(),
+    navController: NavController? = null
+) {
     val uiState by viewModel.customerUiState.collectAsState()
     val context = LocalContext.current
-    // Estado para el cliente a eliminar
     var clientToDelete by remember { mutableStateOf<Client?>(null) }
-    val clients = uiState.customers.map {
-        Client(
-            name = it.name,
-            lastName = it.lastName,
-            icon = Icons.Default.Person,
-            debtsCount = uiState.customersDebtsCount[it] ?: 0
-        )
-    }
-    val displayClients = if (uiState.searchQuery.isNotBlank()) {
-        uiState.searchResults.map {
-            Client(
-                name = it.name,
-                lastName = it.lastName,
-                icon = Icons.Default.Person,
-                debtsCount = uiState.customersDebtsCount[it] ?: 0
-            )
-        }
-    } else {
-        clients
-    }
-    fun getCustomerByName(name: String): Customer? = uiState.customers.find { it.name == name }
     val responsiveConfig = rememberTabResponsiveConfig()
-    GenericListScreen<ListItemUi>(
+
+    // Paging: mapeo Customer -> ClientListItem
+    val customersPaging = viewModel.customersPaging
+        .map { pagingData ->
+            pagingData.map { customer ->
+                ClientListItem(
+                    Client(
+                        name = customer.name,
+                        lastName = customer.lastName,
+                        icon = Icons.Default.Person,
+                        debtsCount = uiState.customersDebtsCount[customer] ?: 0
+                    )
+                )
+            }
+        }
+        .collectAsLazyPagingItems()
+
+    GenericListScreen(
         title = "Customers",
         searchPlaceholder = "Search customers",
         searchQuery = uiState.searchQuery,
-        isLoading = uiState.isLoading,
-        onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-        items = displayClients.map { ClientListItem(it) },
+        onSearchQueryChange = { query ->
+            viewModel.updateSearchQuery(query = query)
+        },
+        pagingItems = customersPaging,
         onEdit = { item ->
-            val client = (item as ClientListItem).client
-            val customer = getCustomerByName(client.name)
+            val client = item.client
+            val customer = uiState.customers.find { it.name == client.name }
             customer?.let {
                 viewModel.startEditCustomer(it)
                 navController?.navigate("editCustomer/${it.id}")
             }
         },
         onDelete = { item ->
-            val client = (item as ClientListItem).client
-            val customer = getCustomerByName(client.name)
+            val client = item.client
+            val customer = uiState.customers.find { it.name == client.name }
             customer?.let {
                 clientToDelete = client
             }
         },
         onDetails = { item ->
-            val client = (item as ClientListItem).client
-            val customer = uiState.customers.find { it.name == client.name && it.lastName == client.lastName }
+            val client = item.client
+            val customer =
+                uiState.customers.find { it.name == client.name && it.lastName == client.lastName }
             customer?.let {
                 navController?.navigate("debtDetail/${it.id}")
             }
@@ -102,9 +103,10 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
         itemToDelete = clientToDelete?.let { ClientListItem(it) },
         onConfirmDelete = {
             clientToDelete?.let { client ->
-                getCustomerByName(client.name)?.let { customer ->
+                uiState.customers.find { it.name == client.name }?.let { customer ->
                     viewModel.deleteCustomer(customer)
-                    Toast.makeText(context, "Customer deleted successfully", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Customer deleted successfully", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
             clientToDelete = null
@@ -114,4 +116,5 @@ fun CustomersBody(modifier: Modifier = Modifier, viewModel: CustomerViewModel = 
         modifier = modifier
     )
 }
+
 

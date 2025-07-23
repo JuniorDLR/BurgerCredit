@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+    implementation(libs.room.paging)
 
     //hilt
     implementation(libs.hilt.android)
@@ -82,6 +83,10 @@ dependencies {
     implementation(libs.lottie.compose)
     //coil
     implementation(libs.coil.compose)
+
+    //paging
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

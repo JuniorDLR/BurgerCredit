@@ -3,6 +3,7 @@ package com.theburgerclub.burgercredit.data.local.dao
 import androidx.room.*
 import com.theburgerclub.burgercredit.data.local.entity.DebtEntity
 import kotlinx.coroutines.flow.Flow
+import androidx.paging.PagingSource
 
 @Dao
 interface DebtDao {
@@ -46,4 +47,10 @@ interface DebtDao {
 
     @Query("UPDATE debts SET isActive = :isActive WHERE id = :debtId")
     suspend fun updateDebtActiveStatus(debtId: Long, isActive: Boolean)
+
+    @Query("SELECT * FROM debts ORDER BY dueDate ASC")
+    fun pagingSource(): PagingSource<Int, DebtEntity>
+
+    @Query("SELECT * FROM debts WHERE isActive = 1 ORDER BY dueDate ASC")
+    fun pagingSourceActive(): PagingSource<Int, DebtEntity>
 } 

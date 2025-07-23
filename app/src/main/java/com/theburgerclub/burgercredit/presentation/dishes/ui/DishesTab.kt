@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.map
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun DishesTab(
@@ -48,17 +51,18 @@ fun DishesTabBody(
     var dishToDelete by remember { mutableStateOf<Dish?>(null) }
     val responsiveConfig = rememberTabResponsiveConfig()
 
-    GenericListScreen<ListItemUi>(
+    // Paging: mapeo Dish -> DishListItem
+    val dishesPaging = viewModel.dishesPaging
+        .map { pagingData -> pagingData.map { dish -> DishListItem(dish) as ListItemUi }
+        }
+        .collectAsLazyPagingItems()
+
+    GenericListScreen(
         title = "Dishes",
         searchPlaceholder = "Search dishes",
         searchQuery = uiState.searchQuery,
-        isLoading = uiState.isLoading,
-        onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-        items = if (uiState.searchQuery.isBlank()) {
-            uiState.dishes.map { DishListItem(it) }
-        } else {
-            uiState.searchResults.map { DishListItem(it) }
-        },
+        onSearchQueryChange = { viewModel.updatePagingSearchQuery(it) },
+        pagingItems = dishesPaging,
         onEdit = { item ->
             val dish = (item as DishListItem).dish
             navController?.navigate("editDish/${dish.id}")

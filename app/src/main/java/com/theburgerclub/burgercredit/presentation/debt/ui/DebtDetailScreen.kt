@@ -37,8 +37,14 @@ fun DebtDetailScreen(
     viewModel: DebtViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.debtUiState.collectAsState()
-    val customerDebtGroup = uiState.customerDebtGroups.firstOrNull { it.customer.id == customerId }
-    val isLoading = uiState.isLoading
+    val customers by viewModel.customers.collectAsState()
+    val debts by viewModel.debts.collectAsState()
+    val customer = customers.firstOrNull { it.id == customerId }
+    val activeDebts = debts.filter { it.customerId == customerId && it.isActive }
+    val customerDebtGroup = if (customer != null && activeDebts.isNotEmpty()) {
+        CustomerDebtGroup(customer, activeDebts)
+    } else null
+    val isLoading = uiState.isLoading || (customers.isEmpty() && debts.isEmpty())
 
     Scaffold(
         topBar = {

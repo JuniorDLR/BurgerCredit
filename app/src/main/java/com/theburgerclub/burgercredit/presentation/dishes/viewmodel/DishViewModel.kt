@@ -12,9 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import android.net.Uri
 import android.content.Context
 import java.io.File
@@ -23,6 +21,13 @@ import com.theburgerclub.burgercredit.presentation.dishes.model.ImageError
 import com.theburgerclub.burgercredit.presentation.dishes.model.StepImageState
 import java.io.InputStream
 import java.io.OutputStream
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import com.theburgerclub.burgercredit.data.local.seed.InitialDishes
 
 @HiltViewModel
 class DishViewModel @Inject constructor(
@@ -31,8 +36,6 @@ class DishViewModel @Inject constructor(
 
     private val _dishUiState = MutableStateFlow(DishUiState())
     val dishUiState: StateFlow<DishUiState> = _dishUiState.asStateFlow()
-
-    private var searchJob: Job? = null
 
     // Image picker state
     fun setImageUri(uri: Uri?) {
@@ -61,18 +64,28 @@ class DishViewModel @Inject constructor(
     }
 
     init {
-        _dishUiState.update { it.copy(isLoading = true) }
-        loadDishes()
+        viewModelScope.launch {
+            _dishUiState.update { it.copy(isLoading = true) }
+            val count = dishUseCase.getDishCount()
+            if (count == 0) {
+                InitialDishes.dishes.forEach { dish ->
+                    dishUseCase.addDish(dish)
+                }
+            }
+            loadDishes()
+            _dishUiState.update { it.copy(isLoading = false) }
+        }
     }
 
     fun loadDishes() {
         viewModelScope.launch {
             delay(300)
             dishUseCase.getAllDishes().collect { list ->
-                _dishUiState.update { it.copy(
-                    dishes = list,
-                    isLoading = false
-                )}
+                _dishUiState.update {
+                    it.copy(
+                        dishes = list
+                    )
+                }
             }
         }
     }
@@ -99,38 +112,28 @@ class DishViewModel @Inject constructor(
     }
 
 
-    fun updateSearchQuery(query: String) {
-        searchJob?.cancel()
-        
-        if (query.isBlank()) {
-            _dishUiState.update { it.copy(
-                searchQuery = "",
-                isLoading = true
-            )}
-            loadDishes()
-            return
-        }
+    // Paging
+    private val _pagingSearchQuery = MutableStateFlow("")
 
-        _dishUiState.update { it.copy(
-            searchQuery = query,
-            isLoading = true
-        )}
-
-        searchJob = viewModelScope.launch {
-            delay(500)
-            try {
-                val dishes = dishUseCase.searchDishesByName(query).first()
-                _dishUiState.update { it.copy(
-                    searchResults = dishes,
-                    isLoading = false
-                )}
-            } catch (_: Exception) {
-                _dishUiState.update { it.copy(
-                    searchResults = emptyList(),
-                    isLoading = false
-                )}
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val dishesPaging = _pagingSearchQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                dishUseCase.getDishesPaging()
+            } else {
+                dishUseCase.searchDishesPaging(query)
             }
         }
+        .cachedIn(viewModelScope)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PagingData.empty())
+
+    fun updatePagingSearchQuery(query: String) {
+        _dishUiState.update { uiState ->
+            uiState.copy(
+                searchQuery = query
+            )
+        }
+        _pagingSearchQuery.value = query
     }
 
     fun onDishNameInputChange(newValue: String) {
@@ -173,7 +176,7 @@ class DishViewModel @Inject constructor(
         }
         _dishUiState.update { it.copy(isLoading = true) }
         try {
-          delay(1000)
+            delay(1000)
             addDish(Dish(name = name, price = price!!, photoUri = photoUri))
             _dishUiState.update {
                 it.copy(
@@ -244,7 +247,7 @@ class DishViewModel @Inject constructor(
         }
         _dishUiState.update { it.copy(isLoading = true) }
         try {
-           delay(1000)
+            delay(1000)
             if (selected != null) {
                 updateDish(selected.copy(name = name, price = price!!, photoUri = photoUri))
             }

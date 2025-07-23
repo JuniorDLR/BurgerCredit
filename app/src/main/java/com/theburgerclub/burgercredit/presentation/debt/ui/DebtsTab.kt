@@ -8,7 +8,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.theburgerclub.burgercredit.domain.model.Debt
-import com.theburgerclub.burgercredit.domain.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
 import com.theburgerclub.burgercredit.presentation.debt.viewmodel.DebtViewModel
 import com.theburgerclub.burgercredit.presentation.shared.GenericListScreen
@@ -17,7 +16,9 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Scaffold
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.theburgerclub.burgercredit.presentation.shared.TopAppBarShared
+
 
 @Composable
 fun DebtsTab(
@@ -48,15 +49,16 @@ fun DebtsTabBody(
     var debtToDelete by remember { mutableStateOf<Debt?>(null) }
     val responsiveConfig = rememberTabResponsiveConfig()
 
-    GenericListScreen<ListItemUi>(
+    val customerDebtGroupsPaging = viewModel.customerDebtGroupsPaging.collectAsLazyPagingItems()
+
+    GenericListScreen(
         title = "Debts",
         searchPlaceholder = "Search debts",
         searchQuery = uiState.searchQuery,
-        isLoading = uiState.isLoading,
-        onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-        items = uiState.customerDebtGroups.map { DebtListItem(it) },
+        onSearchQueryChange = { viewModel.updatePagingSearchQuery(it) },
+        pagingItems = customerDebtGroupsPaging,
         onEdit = { item ->
-            val debtListItem = item as DebtListItem
+            val debtListItem = item
             val activeDebt = debtListItem.customerDebtGroup.debts.firstOrNull { it.isActive }
             val debtId = activeDebt?.id
             if (debtId != null) {
@@ -64,10 +66,11 @@ fun DebtsTabBody(
             }
         },
         onDelete = { item ->
-            Toast.makeText(context, "Delete debts for: ${item.getTitle()}", Toast.LENGTH_SHORT).show()
+            val debtListItem = item
+            Toast.makeText(context, "Delete debts for: ${debtListItem.customerDebtGroup.customer.name}", Toast.LENGTH_SHORT).show()
         },
         onDetails = { item ->
-            val debtListItem = item as DebtListItem
+            val debtListItem = item
             val customerId = debtListItem.customerDebtGroup.customer.id
             navController.navigate("debtDetail/$customerId")
         },
