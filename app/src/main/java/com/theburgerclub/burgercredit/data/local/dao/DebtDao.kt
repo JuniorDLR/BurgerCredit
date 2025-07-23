@@ -26,9 +26,6 @@ interface DebtDao {
     @Query("SELECT * FROM debts WHERE id = :id LIMIT 1")
     suspend fun getDebtById(id: Long): DebtEntity?
 
-    // Get debts by customer
-    @Query("SELECT * FROM debts WHERE customerId = :customerId ORDER BY dueDate ASC")
-    fun getDebtsByCustomer(customerId: Long): Flow<List<DebtEntity>>
 
     // Get active debts
     @Query("SELECT * FROM debts WHERE isActive = 1 ORDER BY dueDate ASC")
@@ -46,9 +43,6 @@ interface DebtDao {
     @Query("SELECT COUNT(*) FROM debts WHERE isActive = 1")
     fun getNumberOfActiveDebts(): Flow<Int>
 
-    // Search debts by description
-    @Query("SELECT * FROM debts WHERE description LIKE '%' || :desc || '%' ORDER BY dueDate ASC")
-    fun searchDebtsByDescription(desc: String): Flow<List<DebtEntity>>
 
     @Query("UPDATE debts SET isActive = :isActive WHERE id = :debtId")
     suspend fun updateDebtActiveStatus(debtId: Long, isActive: Boolean)

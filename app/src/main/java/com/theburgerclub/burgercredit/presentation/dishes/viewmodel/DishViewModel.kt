@@ -124,7 +124,7 @@ class DishViewModel @Inject constructor(
                     searchResults = dishes,
                     isLoading = false
                 )}
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _dishUiState.update { it.copy(
                     searchResults = emptyList(),
                     isLoading = false
@@ -185,7 +185,7 @@ class DishViewModel @Inject constructor(
                 )
             }
             return true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             _dishUiState.update { it.copy(isLoading = false) }
             return false
         }
@@ -250,7 +250,7 @@ class DishViewModel @Inject constructor(
             }
             _dishUiState.update { it.copy(isLoading = false) }
             return true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             _dishUiState.update { it.copy(isLoading = false) }
             return false
         }
@@ -322,7 +322,7 @@ class DishViewModel @Inject constructor(
                 }
             }
             file.toUri()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }

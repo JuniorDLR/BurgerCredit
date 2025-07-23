@@ -26,9 +26,6 @@ class DebtUseCase @Inject constructor(
     suspend fun getDebtById(id: Long): Debt? =
         repository.getDebtById(id)?.toDomain()
 
-    fun getDebtsByCustomer(customerId: Long): Flow<List<Debt>> =
-        repository.getDebtsByCustomer(customerId).map { list -> list.map { it.toDomain() } }
-
     fun getActiveDebts(): Flow<List<Debt>> =
         repository.getActiveDebts().map { list -> list.map { it.toDomain() } }
 
@@ -41,8 +38,6 @@ class DebtUseCase @Inject constructor(
     fun getNumberOfActiveDebts(): Flow<Int> =
         repository.getNumberOfActiveDebts()
 
-    fun searchDebtsByDescription(desc: String): Flow<List<Debt>> =
-        repository.searchDebtsByDescription(desc).map { list -> list.map { it.toDomain() } }
 
     suspend fun updateDebtActiveStatus(debtId: Long, isActive: Boolean) =
         repository.updateDebtActiveStatus(debtId, isActive)

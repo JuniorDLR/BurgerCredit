@@ -22,10 +22,6 @@ interface CustomerDao {
     @Query("SELECT * FROM customers ORDER BY name ASC")
     fun getAllCustomers(): Flow<List<CustomerEntity>>
 
-    // Obtener un cliente por ID
-    @Query("SELECT * FROM customers WHERE id = :id LIMIT 1")
-    suspend fun getCustomerById(id: Long): CustomerEntity?
-
     // Buscar clientes por nombre
     @Query("SELECT * FROM customers WHERE name LIKE '%' || :name || '%' ORDER BY name ASC")
     fun searchCustomersByName(name: String): Flow<List<CustomerEntity>>

@@ -133,7 +133,7 @@ class CustomerViewModel @Inject constructor(
                     searchResults = customers,
                     isLoading = false
                 )}
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _customerUiState.update { it.copy(
                     searchResults = emptyList(),
                     isLoading = false

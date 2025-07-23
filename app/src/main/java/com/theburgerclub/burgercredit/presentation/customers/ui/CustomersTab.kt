@@ -23,7 +23,6 @@ import androidx.compose.material3.FabPosition
 import androidx.navigation.NavController
 import com.theburgerclub.burgercredit.domain.model.ListItemUi
 import com.theburgerclub.burgercredit.presentation.customers.model.ClientListItem
-import com.theburgerclub.burgercredit.presentation.debt.model.DebtListItem
 import com.theburgerclub.burgercredit.presentation.shared.GenericListScreen
 import com.theburgerclub.burgercredit.presentation.shared.model.rememberTabResponsiveConfig
 

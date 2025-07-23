@@ -23,8 +23,7 @@ class CustomerUseCase @Inject constructor(
     fun getAllCustomers(): Flow<List<Customer>> =
         repository.getAllCustomers().map { list -> list.map { it.toDomain() } }
 
-    suspend fun getCustomerById(id: Long): Customer? =
-        repository.getCustomerById(id)?.toDomain()
+
 
     fun searchCustomersByName(name: String): Flow<List<Customer>> =
         repository.searchCustomersByName(name).map { list -> list.map { it.toDomain() } }

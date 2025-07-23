@@ -25,9 +25,6 @@ class DebtRepository @Inject constructor(
     suspend fun getDebtById(id: Long): DebtEntity? =
         debtDao.getDebtById(id)
 
-    fun getDebtsByCustomer(customerId: Long): Flow<List<DebtEntity>> =
-        debtDao.getDebtsByCustomer(customerId)
-
     fun getActiveDebts(): Flow<List<DebtEntity>> =
         debtDao.getActiveDebts()
 
@@ -40,8 +37,6 @@ class DebtRepository @Inject constructor(
     fun getNumberOfActiveDebts(): Flow<Int> =
         debtDao.getNumberOfActiveDebts()
 
-    fun searchDebtsByDescription(desc: String): Flow<List<DebtEntity>> =
-        debtDao.searchDebtsByDescription(desc)
 
     suspend fun updateDebtActiveStatus(debtId: Long, isActive: Boolean) =
         debtDao.updateDebtActiveStatus(debtId, isActive)
