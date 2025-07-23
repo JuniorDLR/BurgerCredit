@@ -337,7 +337,7 @@ private fun <T : ListItemUi> GenericListItemRow(
         is DishListItem -> item.dish.hashCode()
         else -> index
     }
-    val showViewDebtsButton = item is ClientListItem || item is DebtListItem
+    val hideDeleteButton = item is DebtListItem
     val imageUri = when (item) {
         is DishListItem -> item.getPhotoUri()
         else -> null
@@ -359,7 +359,7 @@ private fun <T : ListItemUi> GenericListItemRow(
             id = cardId,
             openCardId = openCardId,
             onCardSwiped = setOpenCardId,
-            showViewDebtsButton = showViewDebtsButton,
+            hideDeleteButton = hideDeleteButton,
             imageUri = imageUri,
             amount = amount
         )
@@ -533,7 +533,7 @@ private fun SwipeActionsRow(
     onEdit: () -> Unit,
     onDetails: (() -> Unit)? = null,
     onDelete: () -> Unit,
-    showViewDebtsButton: Boolean,
+    hideDeleteButton: Boolean,
     actionsWidth: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -553,26 +553,28 @@ private fun SwipeActionsRow(
             backgroundColor = Color(0xFFA5D6A7),
             onClick = onEdit
         )
-        if (showViewDebtsButton) {
-            ActionSquareButton(
-                modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight(),
-                icon = Icons.Default.AttachMoney,
-                label = "View Debts",
-                backgroundColor = Color(0xFF90CAF9),
-                onClick = { onDetails?.invoke() }
-            )
-        }
+
         ActionSquareButton(
             modifier = Modifier
                 .width(80.dp)
                 .fillMaxHeight(),
-            icon = Icons.Default.Delete,
-            label = "Eliminar",
-            backgroundColor = Color(0xFFE57373),
-            onClick = onDelete
+            icon = Icons.Default.AttachMoney,
+            label = "View Details",
+            backgroundColor = Color(0xFF90CAF9),
+            onClick = { onDetails?.invoke() }
         )
+
+        if (!hideDeleteButton) {
+            ActionSquareButton(
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
+                icon = Icons.Default.Delete,
+                label = "Eliminar",
+                backgroundColor = Color(0xFFE57373),
+                onClick = onDelete
+            )
+        }
     }
 }
 
@@ -667,12 +669,13 @@ fun SwipeableClientCard(
     id: Any,
     openCardId: Any?,
     onCardSwiped: (Any?) -> Unit,
-    showViewDebtsButton: Boolean = true,
+    hideDeleteButton: Boolean,
     imageUri: String? = null,
     amount: String? = null
 ) {
     val buttonWidth = 80.dp
-    val actionsCount = if (showViewDebtsButton) 3 else 2
+
+    val actionsCount = if (hideDeleteButton) 2 else 3
     val actionsWidth = buttonWidth * actionsCount
     val density = LocalDensity.current
     val maxSwipe = with(density) { actionsWidth.toPx() }
@@ -714,7 +717,7 @@ fun SwipeableClientCard(
                     isRevealed = false
                 }
             },
-            showViewDebtsButton = showViewDebtsButton,
+            hideDeleteButton = hideDeleteButton,
             actionsWidth = actionsWidth,
             modifier = Modifier.align(Alignment.CenterEnd)
         )
