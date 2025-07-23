@@ -248,6 +248,47 @@ class DebtViewModel @Inject constructor(
         _debtUiState.update { DebtUiState() }
     }
 
+    fun loadDebtForEdit(debtId: Long?) {
+        viewModelScope.launch {
+            if (debtId == null) return@launch
+            val debt = debtUseCase.getDebtById(debtId)
+            debt?.let {
+                val customer = customerUseCase.getAllCustomers().first().find { c -> c.id == debt.customerId }
+                val allDishes = dishUseCase.getAllDishes().first()
+                // Regex robusto para extraer todos los platos y cantidades
+                val debtItemsMap = mutableMapOf<Dish, Int>()
+                val lines = (debt.description ?: "").split("\n")
+                val regex = Regex("""(.+?) x(\d+) \(\$[\d,.]+\)""")
+                for (line in lines) {
+                    val match = regex.find(line.trim())
+                    if (match != null) {
+                        val dishName = match.groupValues[1].trim()
+                        val quantity = match.groupValues[2].toIntOrNull() ?: 1
+                        val dish = allDishes.find { it.name == dishName }
+                        if (dish != null) {
+                            debtItemsMap[dish] = (debtItemsMap[dish] ?: 0) + quantity
+                        }
+                    }
+                }
+                val debtItems = debtItemsMap.entries.map { it.key to it.value }
+                _debtUiState.update { state ->
+                    state.copy(
+                        selectedCustomer = customer,
+                        debtItems = debtItems,
+                        totalAmount = debtItems.sumOf { it.first.price * it.second }
+                    )
+                }
+            }
+        }
+    }
+
+    fun updateDebt(debt: Debt, newAmount: Double, newDescription: String?) {
+        viewModelScope.launch {
+            val updatedDebt = debt.copy(amount = newAmount, description = newDescription)
+            debtUseCase.updateDebt(updatedDebt)
+            loadDebts()
+        }
+    }
 
     fun markAllDebtsAsPaid(customerDebtGroup: CustomerDebtGroup) {
         viewModelScope.launch {

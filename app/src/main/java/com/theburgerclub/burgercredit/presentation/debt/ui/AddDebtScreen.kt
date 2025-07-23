@@ -466,11 +466,23 @@ private fun <T> SearchResultsList(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddDebtScreen(navController: NavHostController, viewModel: DebtViewModel = hiltViewModel()) {
+fun AddDebtScreen(
+    navController: NavHostController,
+    viewModel: DebtViewModel = hiltViewModel(),
+    debtId: Long? = null
+) {
     val uiState by viewModel.debtUiState.collectAsState()
     val filteredCustomers by viewModel.filteredCustomers.collectAsState()
     val filteredDishes by viewModel.filteredDishes.collectAsState()
-    
+
+    // Soporte para edición
+    val isEdit = debtId != null
+    LaunchedEffect(debtId) {
+        if (isEdit) {
+            viewModel.loadDebtForEdit(debtId)
+        }
+    }
+
     var clienteSearch by remember { mutableStateOf("") }
     var platoSearch by remember { mutableStateOf("") }
     var cantidad by remember { mutableIntStateOf(1) }
@@ -484,11 +496,11 @@ fun AddDebtScreen(navController: NavHostController, viewModel: DebtViewModel = h
     Scaffold(
         topBar = {
             TopAppBarShared(
-                nameTopBar = "Add Debt",
+                nameTopBar = if (isEdit) "Edit Debt" else "Add Debt",
                 showNavigationIcon = true,
-                onNavigationClick = { 
+                onNavigationClick = {
                     viewModel.clearDebtState()
-                    navController.popBackStack() 
+                    navController.popBackStack()
                 }
             )
         }
@@ -582,7 +594,10 @@ fun AddDebtScreen(navController: NavHostController, viewModel: DebtViewModel = h
                                 onDecrease = { if (cantidad > 1) cantidad-- },
                                 onAdd = {
                                     if (platoSeleccionado != null) {
-                                        viewModel.addDebtItem(platoSeleccionado!!.id, cantidad)
+                                        viewModel.addDebtItem(
+                                            dishId = platoSeleccionado!!.id,
+                                            quantity = cantidad
+                                        )
                                         platoSeleccionado = null
                                         cantidad = 1
                                         platoSearch = ""
@@ -690,8 +705,22 @@ fun AddDebtScreen(navController: NavHostController, viewModel: DebtViewModel = h
                     )
                     Spacer(Modifier.height(16.dp))
                     Button(
-                        onClick = { 
-                            viewModel.saveDebt()
+                        onClick = {
+                            if (isEdit && debtId != null) {
+                                val debt = viewModel.debtUiState.value.debts.find { it.id == debtId }
+                                if (debt != null) {
+                                    viewModel.updateDebt(
+                                        debt = debt,
+                                        newAmount = uiState.totalAmount,
+                                        newDescription = uiState.debtItems.joinToString("\n") {
+                                            "${it.first.name} x${it.second} ($${String.format("%.2f", it.first.price * it.second)})"
+                                        }
+                                    )
+                                }
+                            } else {
+                                viewModel.saveDebt()
+                            }
+                            viewModel.clearDebtState()
                             navController.popBackStack()
                         },
                         enabled = puedeGuardar,
@@ -701,7 +730,7 @@ fun AddDebtScreen(navController: NavHostController, viewModel: DebtViewModel = h
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("SAVE DEBT", fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimary)
+                        Text(if (isEdit) "UPDATE DEBT" else "SAVE DEBT", fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }

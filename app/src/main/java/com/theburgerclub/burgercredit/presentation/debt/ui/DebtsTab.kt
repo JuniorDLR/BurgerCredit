@@ -57,11 +57,15 @@ fun DebtsTabBody(
         onSearchQueryChange = { viewModel.updateSearchQuery(it) },
         items = uiState.customerDebtGroups.map { DebtListItem(it) },
         onEdit = { item ->
-            Toast.makeText(context, "Edit debts for: ${item.getTitle()}", Toast.LENGTH_SHORT).show()
+            val debtListItem = item as DebtListItem
+            val activeDebt = debtListItem.customerDebtGroup.debts.firstOrNull { it.isActive }
+            val debtId = activeDebt?.id
+            if (debtId != null) {
+                navController.navigate("editDebt/$debtId")
+            }
         },
         onDelete = { item ->
-            Toast.makeText(context, "Delete debts for: ${item.getTitle()}", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(context, "Delete debts for: ${item.getTitle()}", Toast.LENGTH_SHORT).show()
         },
         onDetails = { item ->
             val debtListItem = item as DebtListItem

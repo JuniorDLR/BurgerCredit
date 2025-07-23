@@ -60,7 +60,13 @@ fun AppNavGraph() {
                 navController = navController,
                 customerId = customerId)
         }
-
+        composable(
+            route = AppRoute.EditDebtScreen.route,
+            arguments = listOf(navArgument("debtId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val debtId = backStackEntry.arguments?.getLong("debtId")
+            AddDebtScreen(navController = navController, debtId = debtId)
+        }
 
         composable(
             route = AppRoute.EditDishScreen.route,
